@@ -1,5 +1,7 @@
 "use client"
 
+import type React from "react"
+
 import { useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
@@ -19,7 +21,18 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
-import { Calendar, ArrowLeft, Users, Settings, Trash2, AlertTriangle, Edit, QrCode, Mail, UserPlus } from "lucide-react"
+import {
+  Calendar,
+  ArrowLeft,
+  Users,
+  Trash2,
+  AlertTriangle,
+  Edit,
+  Mail,
+  UserPlus,
+  Sparkles,
+  CheckCircle,
+} from "lucide-react"
 import { ThemeToggle } from "@/components/theme-toggle"
 
 // Mock event data
@@ -54,8 +67,8 @@ const mockAttendees = [
 ]
 
 const mockScanners = [
-  { id: "1", name: "John Doe", email: "john@example.com", role: "Creator" },
-  { id: "2", name: "Jane Smith", email: "jane@example.com", role: "Scanner" },
+  { id: "1", email: "scanner1@example.com", name: "John Scanner", status: "ACTIVE" },
+  { id: "2", email: "scanner2@example.com", name: "Jane Scanner", status: "PENDING" },
 ]
 
 export default function ManageEventPage({ params }: { params: { id: string } }) {
@@ -64,6 +77,8 @@ export default function ManageEventPage({ params }: { params: { id: string } }) 
   const [showAddScannerDialog, setShowAddScannerDialog] = useState(false)
   const [scannerEmail, setScannerEmail] = useState("")
   const [addingScanner, setAddingScanner] = useState(false)
+  const [success, setSuccess] = useState("")
+  const [error, setError] = useState("")
   const router = useRouter()
 
   const formatDate = (dateString: string) => {
@@ -90,17 +105,31 @@ export default function ManageEventPage({ params }: { params: { id: string } }) 
     }
   }
 
-  const handleAddScanner = async () => {
+  const handleAddScanner = async (e: React.FormEvent) => {
+    e.preventDefault()
     setAddingScanner(true)
+    setError("")
+    setSuccess("")
+
     try {
       // Simulate API call
       await new Promise((resolve) => setTimeout(resolve, 1000))
+      setSuccess(`Scanner invitation sent to ${scannerEmail}`)
       setScannerEmail("")
-      setShowAddScannerDialog(false)
-    } catch (error) {
-      console.error("Failed to add scanner")
+    } catch (err) {
+      setError("Failed to add scanner. Please try again.")
     } finally {
       setAddingScanner(false)
+    }
+  }
+
+  const handleRemoveScanner = async (scannerId: string) => {
+    try {
+      // Simulate API call
+      await new Promise((resolve) => setTimeout(resolve, 500))
+      setSuccess("Scanner removed successfully")
+    } catch (err) {
+      setError("Failed to remove scanner")
     }
   }
 
@@ -116,8 +145,11 @@ export default function ManageEventPage({ params }: { params: { id: string } }) 
                 Back to Event
               </Link>
             </Button>
-            <div className="flex items-center space-x-2">
-              <Settings className="h-6 w-6 text-primary" />
+            <div className="flex items-center space-x-3">
+              <div className="relative">
+                <Calendar className="h-6 w-6 text-primary" />
+                <Sparkles className="h-2 w-2 text-primary absolute -top-0.5 -right-0.5" />
+              </div>
               <h1 className="text-xl font-bold">Manage Event</h1>
             </div>
           </div>
@@ -164,166 +196,75 @@ export default function ManageEventPage({ params }: { params: { id: string } }) 
       <div className="container mx-auto px-4 py-8">
         {/* Event Overview */}
         <div className="mb-8">
-          <h2 className="text-3xl font-bold mb-2">{mockEvent.name}</h2>
-          <p className="text-muted-foreground">{mockEvent.description}</p>
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h1 className="text-3xl font-bold mb-2">{mockEvent.name}</h1>
+              <p className="text-muted-foreground">Manage your event settings and scanners</p>
+            </div>
+            <Badge className="bg-blue-500/10 text-blue-500 border-blue-500/20">{mockEvent.status}</Badge>
+          </div>
         </div>
 
-        <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="attendees">Attendees</TabsTrigger>
-            <TabsTrigger value="scanners">Scanners</TabsTrigger>
-            <TabsTrigger value="settings">Settings</TabsTrigger>
+        <Tabs defaultValue="scanners" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="scanners">Scanner Management</TabsTrigger>
+            <TabsTrigger value="settings">Event Settings</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="overview">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {/* Stats Cards */}
-              <Card className="border-2 bg-gradient-to-br from-card to-card/50">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Total Registrations</CardTitle>
-                  <Users className="h-4 w-4 text-primary" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{mockEvent.attendees}</div>
-                  <p className="text-xs text-muted-foreground">
-                    {((mockEvent.attendees / mockEvent.maxAttendees) * 100).toFixed(1)}% capacity
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card className="border-2 bg-gradient-to-br from-card to-card/50">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Available Spots</CardTitle>
-                  <Users className="h-4 w-4 text-primary" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{mockEvent.maxAttendees - mockEvent.attendees}</div>
-                  <p className="text-xs text-muted-foreground">of {mockEvent.maxAttendees} total capacity</p>
-                </CardContent>
-              </Card>
-
-              <Card className="border-2 bg-gradient-to-br from-card to-card/50">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Event Status</CardTitle>
-                  <Calendar className="h-4 w-4 text-primary" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{mockEvent.status}</div>
-                  <p className="text-xs text-muted-foreground">{formatDate(mockEvent.start_time)}</p>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Recent Registrations */}
-            <Card className="mt-6 border-2 bg-gradient-to-br from-card to-card/50">
-              <CardHeader>
-                <CardTitle>Recent Registrations</CardTitle>
-                <CardDescription>Latest attendees who registered for your event</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {mockAttendees.slice(0, 5).map((attendee) => (
-                    <div
-                      key={attendee.id}
-                      className="flex items-center justify-between p-3 border rounded-lg bg-muted/20"
-                    >
-                      <div className="flex items-center space-x-3">
-                        <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
-                          <Users className="h-4 w-4 text-primary" />
-                        </div>
-                        <div>
-                          <div className="font-medium">{attendee.name}</div>
-                          <div className="text-sm text-muted-foreground">{attendee.email}</div>
-                        </div>
-                      </div>
-                      <div className="text-sm text-muted-foreground">{formatDate(attendee.registeredAt)}</div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="attendees">
-            <Card className="border-2 bg-gradient-to-br from-card to-card/50">
-              <CardHeader>
-                <CardTitle>Event Attendees</CardTitle>
-                <CardDescription>View all registered attendees (read-only)</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {mockAttendees.map((attendee) => (
-                    <div
-                      key={attendee.id}
-                      className="flex items-center justify-between p-4 border rounded-lg bg-muted/20"
-                    >
-                      <div className="flex items-center space-x-3">
-                        <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
-                          <Users className="h-5 w-5 text-primary" />
-                        </div>
-                        <div>
-                          <div className="font-medium">{attendee.name}</div>
-                          <div className="text-sm text-muted-foreground">{attendee.email}</div>
-                          <div className="text-xs text-muted-foreground">
-                            Registered: {formatDate(attendee.registeredAt)}
-                          </div>
-                        </div>
-                      </div>
-                      <Badge variant="secondary">{attendee.status}</Badge>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
           <TabsContent value="scanners">
-            <Card className="border-2 bg-gradient-to-br from-card to-card/50">
-              <CardHeader className="flex flex-row items-center justify-between">
-                <div>
-                  <CardTitle>QR Code Scanners</CardTitle>
-                  <CardDescription>Manage who can scan tickets at your event</CardDescription>
-                </div>
-                <Dialog open={showAddScannerDialog} onOpenChange={setShowAddScannerDialog}>
-                  <DialogTrigger asChild>
-                    <Button>
-                      <UserPlus className="h-4 w-4 mr-2" />
-                      Add Scanner
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>Add QR Code Scanner</DialogTitle>
-                      <DialogDescription>
-                        Enter the email address of the person you want to assign as a scanner for this event.
-                      </DialogDescription>
-                    </DialogHeader>
-                    <div className="space-y-4">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Add Scanner Form */}
+              <div className="lg:col-span-1">
+                <Card className="border-2 bg-gradient-to-br from-card to-card/50">
+                  <CardHeader>
+                    <CardTitle className="flex items-center space-x-2">
+                      <UserPlus className="h-5 w-5 text-primary" />
+                      <span>Add Scanner</span>
+                    </CardTitle>
+                    <CardDescription>Invite someone to scan tickets for your event</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <form onSubmit={handleAddScanner} className="space-y-4">
+                      {success && (
+                        <Alert className="border-2 bg-gradient-to-br from-green-500/5 to-green-500/10">
+                          <CheckCircle className="h-4 w-4 text-green-500" />
+                          <AlertDescription className="text-green-700 dark:text-green-400">{success}</AlertDescription>
+                        </Alert>
+                      )}
+
+                      {error && (
+                        <Alert variant="destructive" className="border-2">
+                          <AlertDescription>{error}</AlertDescription>
+                        </Alert>
+                      )}
+
                       <div className="space-y-2">
-                        <Label htmlFor="scannerEmail">Scanner Email Address</Label>
+                        <Label htmlFor="scannerEmail" className="text-base font-medium">
+                          Scanner Email
+                        </Label>
                         <Input
                           id="scannerEmail"
                           type="email"
-                          placeholder="Enter email address"
+                          placeholder="scanner@example.com"
                           value={scannerEmail}
                           onChange={(e) => setScannerEmail(e.target.value)}
-                          className="border-2 focus:border-primary"
+                          required
+                          className="h-12 text-base border-2 focus:border-primary"
                         />
                         <p className="text-sm text-muted-foreground">
-                          If this person doesn't have an account, they'll be invited to create one.
+                          They'll receive an email invitation to scan tickets
                         </p>
                       </div>
-                    </div>
-                    <DialogFooter>
-                      <Button variant="outline" onClick={() => setShowAddScannerDialog(false)}>
-                        Cancel
-                      </Button>
-                      <Button onClick={handleAddScanner} disabled={addingScanner || !scannerEmail}>
+
+                      <Button
+                        type="submit"
+                        disabled={addingScanner}
+                        className="w-full h-12 text-base bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70"
+                      >
                         {addingScanner ? (
                           <>
                             <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
-                            Adding...
+                            Sending Invitation...
                           </>
                         ) : (
                           <>
@@ -332,129 +273,129 @@ export default function ManageEventPage({ params }: { params: { id: string } }) 
                           </>
                         )}
                       </Button>
-                    </DialogFooter>
-                  </DialogContent>
-                </Dialog>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {mockScanners.map((scanner) => (
-                    <div
-                      key={scanner.id}
-                      className="flex items-center justify-between p-4 border rounded-lg bg-muted/20"
-                    >
-                      <div className="flex items-center space-x-3">
-                        <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
-                          <QrCode className="h-5 w-5 text-primary" />
+                    </form>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Current Scanners */}
+              <div className="lg:col-span-2">
+                <Card className="border-2 bg-gradient-to-br from-card to-card/50">
+                  <CardHeader>
+                    <CardTitle>Current Scanners</CardTitle>
+                    <CardDescription>People who can scan tickets for this event</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      {mockScanners.map((scanner) => (
+                        <div
+                          key={scanner.id}
+                          className="flex items-center justify-between p-4 border rounded-lg bg-muted/20 hover:bg-muted/30 transition-colors"
+                        >
+                          <div className="flex items-center space-x-3">
+                            <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
+                              <Users className="h-5 w-5 text-primary" />
+                            </div>
+                            <div>
+                              <div className="font-medium">{scanner.name}</div>
+                              <div className="text-sm text-muted-foreground">{scanner.email}</div>
+                            </div>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <Badge
+                              className={
+                                scanner.status === "ACTIVE"
+                                  ? "bg-green-500/10 text-green-500 border-green-500/20"
+                                  : "bg-yellow-500/10 text-yellow-500 border-yellow-500/20"
+                              }
+                            >
+                              {scanner.status}
+                            </Badge>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleRemoveScanner(scanner.id)}
+                              className="border-2 hover:border-destructive hover:text-destructive"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
                         </div>
-                        <div>
-                          <div className="font-medium">{scanner.name}</div>
-                          <div className="text-sm text-muted-foreground">{scanner.email}</div>
+                      ))}
+
+                      {mockScanners.length === 0 && (
+                        <div className="text-center py-8">
+                          <div className="p-4 bg-gradient-to-br from-muted/10 to-muted/5 rounded-full w-fit mx-auto mb-4">
+                            <UserPlus className="h-8 w-8 text-muted-foreground" />
+                          </div>
+                          <h3 className="text-lg font-semibold mb-2">No scanners added yet</h3>
+                          <p className="text-muted-foreground">Add scanners to help manage check-ins at your event</p>
                         </div>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <Badge variant={scanner.role === "Creator" ? "default" : "secondary"}>{scanner.role}</Badge>
-                        {scanner.role !== "Creator" && (
-                          <Button variant="outline" size="sm">
-                            Remove
-                          </Button>
-                        )}
-                      </div>
+                      )}
                     </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
           </TabsContent>
 
           <TabsContent value="settings">
-            <div className="space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Event Stats */}
               <Card className="border-2 bg-gradient-to-br from-card to-card/50">
                 <CardHeader>
-                  <CardTitle>Event Actions</CardTitle>
-                  <CardDescription>Manage your event settings and actions</CardDescription>
+                  <CardTitle>Event Statistics</CardTitle>
+                  <CardDescription>Current event metrics</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="flex items-center justify-between p-4 border rounded-lg bg-muted/20">
-                    <div>
-                      <h3 className="font-medium">Edit Event Details</h3>
-                      <p className="text-sm text-muted-foreground">
-                        Update event information, date, time, and location
-                      </p>
-                    </div>
-                    <Button variant="outline" asChild>
-                      <Link href={`/events/${params.id}/edit`}>
-                        <Edit className="h-4 w-4 mr-2" />
-                        Edit
-                      </Link>
-                    </Button>
+                  <div className="flex items-center justify-between p-3 bg-muted/20 rounded-lg">
+                    <span className="text-sm font-medium">Total Registrations</span>
+                    <span className="text-lg font-bold text-primary">{mockEvent.attendees}</span>
                   </div>
-
-                  <div className="flex items-center justify-between p-4 border rounded-lg bg-muted/20">
-                    <div>
-                      <h3 className="font-medium">Export Attendee List</h3>
-                      <p className="text-sm text-muted-foreground">Download a CSV file with all attendee information</p>
-                    </div>
-                    <Button variant="outline">
-                      <Users className="h-4 w-4 mr-2" />
-                      Export CSV
-                    </Button>
+                  <div className="flex items-center justify-between p-3 bg-muted/20 rounded-lg">
+                    <span className="text-sm font-medium">Available Spots</span>
+                    <span className="text-lg font-bold text-primary">
+                      {mockEvent.maxAttendees - mockEvent.attendees}
+                    </span>
                   </div>
-
-                  <div className="flex items-center justify-between p-4 border rounded-lg bg-muted/20">
-                    <div>
-                      <h3 className="font-medium">Send Announcement</h3>
-                      <p className="text-sm text-muted-foreground">Send an email update to all registered attendees</p>
-                    </div>
-                    <Button variant="outline">
-                      <Mail className="h-4 w-4 mr-2" />
-                      Send Email
-                    </Button>
+                  <div className="flex items-center justify-between p-3 bg-muted/20 rounded-lg">
+                    <span className="text-sm font-medium">Capacity Utilization</span>
+                    <span className="text-lg font-bold text-primary">
+                      {Math.round((mockEvent.attendees / mockEvent.maxAttendees) * 100)}%
+                    </span>
                   </div>
                 </CardContent>
               </Card>
 
-              <Card className="border-2 border-red-200 bg-gradient-to-br from-card to-card/50">
+              {/* Quick Actions */}
+              <Card className="border-2 bg-gradient-to-br from-card to-card/50">
                 <CardHeader>
-                  <CardTitle className="text-red-600">Danger Zone</CardTitle>
-                  <CardDescription>Irreversible actions for your event</CardDescription>
+                  <CardTitle>Quick Actions</CardTitle>
+                  <CardDescription>Manage your event</CardDescription>
                 </CardHeader>
-                <CardContent>
-                  <Alert className="mb-4 border-red-200">
-                    <AlertTriangle className="h-4 w-4" />
-                    <AlertDescription>
-                      Cancelling your event will notify all attendees and cannot be undone.
-                    </AlertDescription>
-                  </Alert>
+                <CardContent className="space-y-4">
+                  <Button variant="outline" className="w-full justify-start border-2 bg-transparent" asChild>
+                    <Link href={`/events/${params.id}/edit`}>
+                      <Calendar className="h-4 w-4 mr-2" />
+                      Edit Event Details
+                    </Link>
+                  </Button>
 
-                  <Dialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
-                    <DialogTrigger asChild>
-                      <Button variant="destructive">
-                        <Trash2 className="h-4 w-4 mr-2" />
-                        Cancel Event
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent>
-                      <DialogHeader>
-                        <DialogTitle className="flex items-center space-x-2">
-                          <AlertTriangle className="h-5 w-5 text-red-600" />
-                          <span>Cancel Event</span>
-                        </DialogTitle>
-                        <DialogDescription>
-                          Are you sure you want to cancel "{mockEvent.name}"? This action cannot be undone and all
-                          registered attendees will be notified.
-                        </DialogDescription>
-                      </DialogHeader>
-                      <DialogFooter>
-                        <Button variant="outline" onClick={() => setShowCancelDialog(false)}>
-                          Keep Event
-                        </Button>
-                        <Button variant="destructive" onClick={handleCancelEvent} disabled={cancelling}>
-                          {cancelling ? "Cancelling..." : "Cancel Event"}
-                        </Button>
-                      </DialogFooter>
-                    </DialogContent>
-                  </Dialog>
+                  <Button variant="outline" className="w-full justify-start border-2 bg-transparent" asChild>
+                    <Link href={`/events/${params.id}`}>
+                      <Users className="h-4 w-4 mr-2" />
+                      View Event Page
+                    </Link>
+                  </Button>
+
+                  <Button
+                    variant="destructive"
+                    className="w-full justify-start"
+                    onClick={() => setShowCancelDialog(true)}
+                  >
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Cancel Event
+                  </Button>
                 </CardContent>
               </Card>
             </div>

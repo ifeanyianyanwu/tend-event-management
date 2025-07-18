@@ -7,7 +7,8 @@ import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Calendar, Search, MapPin, Clock, Users, User } from "lucide-react"
+import { Calendar, Search, MapPin, Clock, Users, User, Sparkles } from "lucide-react"
+import { ThemeToggle } from "@/components/theme-toggle"
 
 // Mock events data
 const mockEvents = [
@@ -102,15 +103,15 @@ export default function EventsPage() {
   const getStatusColor = (status: string) => {
     switch (status) {
       case "UPCOMING":
-        return "bg-blue-100 text-blue-800"
+        return "bg-blue-500/10 text-blue-500 border-blue-500/20"
       case "ONGOING":
-        return "bg-green-100 text-green-800"
+        return "bg-green-500/10 text-green-500 border-green-500/20"
       case "COMPLETED":
-        return "bg-gray-100 text-gray-800"
+        return "bg-gray-500/10 text-gray-500 border-gray-500/20"
       case "CANCELLED":
-        return "bg-red-100 text-red-800"
+        return "bg-red-500/10 text-red-500 border-red-500/20"
       default:
-        return "bg-gray-100 text-gray-800"
+        return "bg-gray-500/10 text-gray-500 border-gray-500/20"
     }
   }
 
@@ -144,24 +145,35 @@ export default function EventsPage() {
   const categories = ["all", ...Array.from(new Set(mockEvents.map((event) => event.category)))]
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
       {/* Header */}
-      <header className="bg-white border-b">
+      <header className="border-b bg-background/80 backdrop-blur-sm sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-          <div className="flex items-center space-x-2">
-            <Calendar className="h-8 w-8 text-blue-600" />
-            <h1 className="text-2xl font-bold text-gray-900">EventHub</h1>
+          <div className="flex items-center space-x-3">
+            <div className="relative">
+              <Calendar className="h-8 w-8 text-primary" />
+              <Sparkles className="h-3 w-3 text-primary absolute -top-1 -right-1" />
+            </div>
+            <h1 className="text-2xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
+              EventHub
+            </h1>
           </div>
           <div className="flex items-center space-x-4">
+            <ThemeToggle />
             <Button variant="outline" asChild>
               <Link href="/dashboard">Dashboard</Link>
             </Button>
-            <Button asChild>
+            <Button
+              asChild
+              className="bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70"
+            >
               <Link href="/events/create">Create Event</Link>
             </Button>
             <div className="flex items-center space-x-2">
-              <User className="h-8 w-8 text-gray-600" />
-              <span className="text-sm text-gray-600">John Doe</span>
+              <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
+                <User className="h-4 w-4 text-primary" />
+              </div>
+              <span className="text-sm font-medium">John Doe</span>
             </div>
           </div>
         </div>
@@ -170,15 +182,15 @@ export default function EventsPage() {
       <div className="container mx-auto px-4 py-8">
         {/* Page Header */}
         <div className="mb-8">
-          <h2 className="text-3xl font-bold text-gray-900 mb-2">Discover Events</h2>
-          <p className="text-gray-600">Find and register for events that interest you</p>
+          <h2 className="text-3xl font-bold mb-2">Discover Events</h2>
+          <p className="text-muted-foreground">Find and register for events that interest you</p>
         </div>
 
         {/* Search and Filters */}
-        <Card className="mb-8">
+        <Card className="mb-8 border-2 bg-gradient-to-br from-card to-card/50">
           <CardHeader>
             <CardTitle className="flex items-center space-x-2">
-              <Search className="h-5 w-5" />
+              <Search className="h-5 w-5 text-primary" />
               <span>Search & Filter Events</span>
             </CardTitle>
           </CardHeader>
@@ -186,18 +198,18 @@ export default function EventsPage() {
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div className="md:col-span-2">
                 <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                   <Input
                     placeholder="Search events..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10"
+                    className="pl-10 h-12 text-base border-2 focus:border-primary"
                   />
                 </div>
               </div>
 
               <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-                <SelectTrigger>
+                <SelectTrigger className="h-12 text-base border-2 focus:border-primary">
                   <SelectValue placeholder="Category" />
                 </SelectTrigger>
                 <SelectContent>
@@ -210,7 +222,7 @@ export default function EventsPage() {
               </Select>
 
               <Select value={locationFilter} onValueChange={setLocationFilter}>
-                <SelectTrigger>
+                <SelectTrigger className="h-12 text-base border-2 focus:border-primary">
                   <SelectValue placeholder="Location" />
                 </SelectTrigger>
                 <SelectContent>
@@ -225,7 +237,7 @@ export default function EventsPage() {
 
         {/* Results Summary */}
         <div className="mb-6">
-          <p className="text-gray-600">
+          <p className="text-muted-foreground">
             Showing {filteredEvents.length} of {mockEvents.length} events
           </p>
         </div>
@@ -233,51 +245,58 @@ export default function EventsPage() {
         {/* Events Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredEvents.map((event) => (
-            <Card key={event.id} className="hover:shadow-lg transition-shadow">
+            <Card
+              key={event.id}
+              className="border-2 bg-gradient-to-br from-card to-card/50 hover:shadow-lg transition-all duration-300 hover:scale-105"
+            >
               <CardHeader>
                 <div className="flex items-start justify-between mb-2">
                   <div className="flex-1">
                     <CardTitle className="text-lg mb-1">{event.name}</CardTitle>
-                    <div className="flex items-center space-x-2">
+                    <div className="flex items-center space-x-2 flex-wrap gap-1">
                       <Badge className={getStatusColor(event.status)}>{event.status}</Badge>
-                      <Badge variant="outline">{event.category}</Badge>
-                      {event.isRegistered && <Badge variant="secondary">Registered</Badge>}
+                      <Badge variant="outline" className="border-primary/20 text-primary">
+                        {event.category}
+                      </Badge>
+                      {event.isRegistered && (
+                        <Badge className="bg-green-500/10 text-green-500 border-green-500/20">Registered</Badge>
+                      )}
                     </div>
                   </div>
                 </div>
-                <CardDescription className="line-clamp-2">{event.description}</CardDescription>
+                <CardDescription className="line-clamp-2 text-base">{event.description}</CardDescription>
               </CardHeader>
 
               <CardContent>
                 <div className="space-y-3">
-                  <div className="flex items-center space-x-2 text-sm text-gray-600">
-                    <Clock className="h-4 w-4" />
+                  <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+                    <Clock className="h-4 w-4 text-primary" />
                     <span>{formatDate(event.start_time)}</span>
                   </div>
 
-                  <div className="flex items-center space-x-2 text-sm text-gray-600">
-                    <MapPin className="h-4 w-4" />
+                  <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+                    <MapPin className="h-4 w-4 text-primary" />
                     <span className="truncate">{event.location}</span>
                   </div>
 
-                  <div className="flex items-center space-x-2 text-sm text-gray-600">
-                    <Users className="h-4 w-4" />
+                  <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+                    <Users className="h-4 w-4 text-primary" />
                     <span>
                       {event.attendees} / {event.maxAttendees} attendees
                     </span>
                   </div>
 
-                  <div className="text-sm text-gray-600">
+                  <div className="text-sm text-muted-foreground">
                     <span>Organized by {event.creator}</span>
                   </div>
 
                   <div className="flex space-x-2 pt-4">
-                    <Button variant="outline" size="sm" asChild className="flex-1 bg-transparent">
+                    <Button variant="outline" size="sm" asChild className="flex-1 border-2 bg-transparent">
                       <Link href={`/events/${event.id}`}>View Details</Link>
                     </Button>
 
                     {event.isRegistered ? (
-                      <Button variant="outline" size="sm" asChild>
+                      <Button variant="outline" size="sm" asChild className="border-2 bg-transparent">
                         <Link href={`/tickets/${event.id}`}>View Ticket</Link>
                       </Button>
                     ) : (
@@ -285,6 +304,7 @@ export default function EventsPage() {
                         size="sm"
                         onClick={() => handleRegister(event.id)}
                         disabled={registering === event.id || event.attendees >= event.maxAttendees}
+                        className="bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70"
                       >
                         {registering === event.id
                           ? "Registering..."
@@ -302,12 +322,17 @@ export default function EventsPage() {
 
         {/* No Results */}
         {filteredEvents.length === 0 && (
-          <Card className="text-center py-12">
+          <Card className="text-center py-12 border-2 bg-gradient-to-br from-card to-card/50">
             <CardContent>
-              <Search className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">No events found</h3>
-              <p className="text-gray-600 mb-4">Try adjusting your search criteria or filters</p>
-              <Button asChild>
+              <div className="p-4 bg-gradient-to-br from-muted/10 to-muted/5 rounded-full w-fit mx-auto mb-4">
+                <Search className="h-12 w-12 text-muted-foreground" />
+              </div>
+              <h3 className="text-lg font-semibold mb-2">No events found</h3>
+              <p className="text-muted-foreground mb-4">Try adjusting your search criteria or filters</p>
+              <Button
+                asChild
+                className="bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70"
+              >
                 <Link href="/events/create">Create Your Own Event</Link>
               </Button>
             </CardContent>
