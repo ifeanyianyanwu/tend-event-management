@@ -1,8 +1,6 @@
 "use client"
 
-import type React from "react"
-
-import { useState } from "react"
+import { useActionState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
@@ -14,117 +12,23 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Calendar, ArrowLeft, Sparkles, User, AlertCircle, CheckCircle } from "lucide-react"
 import { ThemeToggle } from "@/components/theme-toggle"
-import { eventService } from "@/services/event.service"
+import { createEvent } from "@/actions/events"
 
 export default function CreateEventPage() {
-  const [formData, setFormData] = useState({
-    name: "",
-    description: "",
-    longDescription: "",
-    startDate: "",
-    startTime: "",
-    endDate: "",
-    endTime: "",
-    location: "",
-    category: "",
-    maxAttendees: "",
-    price: "0",
-    tags: "",
-  })
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState("")
-  const [success, setSuccess] = useState(false)
+  const [state, action, pending] = useActionState(createEvent, undefined)
   const router = useRouter()
+
+  useEffect(() => {
+    if (state?.success) {
+      setTimeout(() => {
+        router.push(`/events/${state.eventId}`)
+      }, 2000)
+    }
+  }, [state?.success, state?.eventId, router])
 
   const categories = ["Technology", "Business", "Education", "Networking", "Entertainment", "Sports", "Health", "Arts"]
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    })
-  }
-
-  const handleSelectChange = (name: string, value: string) => {
-    setFormData({
-      ...formData,
-      [name]: value,
-    })
-  }
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setLoading(true)
-    setError("")
-
-    try {
-      // Validate required fields
-      if (
-        !formData.name ||
-        !formData.description ||
-        !formData.startDate ||
-        !formData.startTime ||
-        !formData.endDate ||
-        !formData.endTime ||
-        !formData.location ||
-        !formData.category ||
-        !formData.maxAttendees
-      ) {
-        setError("Please fill in all required fields")
-        setLoading(false)
-        return
-      }
-
-      // Validate dates
-      const startDateTime = new Date(`${formData.startDate}T${formData.startTime}`)
-      const endDateTime = new Date(`${formData.endDate}T${formData.endTime}`)
-
-      if (startDateTime >= endDateTime) {
-        setError("End date and time must be after start date and time")
-        setLoading(false)
-        return
-      }
-
-      if (startDateTime <= new Date()) {
-        setError("Event start time must be in the future")
-        setLoading(false)
-        return
-      }
-
-      const eventData = {
-        name: formData.name,
-        description: formData.description,
-        longDescription: formData.longDescription || formData.description,
-        start_time: startDateTime.toISOString(),
-        end_time: endDateTime.toISOString(),
-        location: formData.location,
-        category: formData.category,
-        maxAttendees: Number.parseInt(formData.maxAttendees),
-        price: Number.parseFloat(formData.price),
-        tags: formData.tags
-          .split(",")
-          .map((tag) => tag.trim())
-          .filter(Boolean),
-        creator: "John Doe", // In a real app, this would come from auth
-      }
-
-      const result = await eventService.createEvent(eventData)
-      if (result.success) {
-        setSuccess(true)
-        setTimeout(() => {
-          router.push(`/events/${result.eventId}`)
-        }, 2000)
-      } else {
-        setError(result.error || "Failed to create event")
-      }
-    } catch (err) {
-      setError("An unexpected error occurred")
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  if (success) {
+  if (state?.success) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20 flex items-center justify-center p-4">
         <Card className="w-full max-w-md border-2 bg-gradient-to-br from-card to-card/50">
@@ -189,11 +93,11 @@ export default function CreateEventPage() {
               <CardDescription>Provide the basic details about your event</CardDescription>
             </CardHeader>
             <CardContent>
-              <form onSubmit={handleSubmit} className="space-y-6">
-                {error && (
+              <form action={action} className="space-y-6">
+                {state?.errors?.generic && (
                   <Alert className="border-2 bg-gradient-to-br from-destructive/5 to-destructive/10">
                     <AlertCircle className="h-4 w-4 text-destructive" />
-                    <AlertDescription className="text-destructive">{error}</AlertDescription>
+                    <AlertDescription className="text-destructive">{state.errors.generic}</AlertDescription>
                   </Alert>
                 )}
 
@@ -207,11 +111,16 @@ export default function CreateEventPage() {
                     name="name"
                     type="text"
                     placeholder="Enter event name"
-                    value={formData.name}
-                    onChange={handleChange}
                     required
                     className="h-12 text-base border-2 focus:border-primary"
                   />
+                  {state?.errors?.name && (
+                    <div className="text-sm text-destructive">
+                      {state.errors.name.map((error) => (
+                        <p key={error}>{error}</p>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
                 {/* Description */}
@@ -223,11 +132,16 @@ export default function CreateEventPage() {
                     id="description"
                     name="description"
                     placeholder="Brief description of your event"
-                    value={formData.description}
-                    onChange={handleChange}
                     required
                     className="min-h-[100px] text-base border-2 focus:border-primary resize-none"
                   />
+                  {state?.errors?.description && (
+                    <div className="text-sm text-destructive">
+                      {state.errors.description.map((error) => (
+                        <p key={error}>{error}</p>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
                 {/* Long Description */}
@@ -239,8 +153,6 @@ export default function CreateEventPage() {
                     id="longDescription"
                     name="longDescription"
                     placeholder="Detailed description, agenda, what attendees can expect..."
-                    value={formData.longDescription}
-                    onChange={handleChange}
                     className="min-h-[150px] text-base border-2 focus:border-primary resize-none"
                   />
                 </div>
@@ -255,11 +167,16 @@ export default function CreateEventPage() {
                       id="startDate"
                       name="startDate"
                       type="date"
-                      value={formData.startDate}
-                      onChange={handleChange}
                       required
                       className="h-12 text-base border-2 focus:border-primary"
                     />
+                    {state?.errors?.startDate && (
+                      <div className="text-sm text-destructive">
+                        {state.errors.startDate.map((error) => (
+                          <p key={error}>{error}</p>
+                        ))}
+                      </div>
+                    )}
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="startTime" className="text-sm font-medium">
@@ -269,11 +186,16 @@ export default function CreateEventPage() {
                       id="startTime"
                       name="startTime"
                       type="time"
-                      value={formData.startTime}
-                      onChange={handleChange}
                       required
                       className="h-12 text-base border-2 focus:border-primary"
                     />
+                    {state?.errors?.startTime && (
+                      <div className="text-sm text-destructive">
+                        {state.errors.startTime.map((error) => (
+                          <p key={error}>{error}</p>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -286,11 +208,16 @@ export default function CreateEventPage() {
                       id="endDate"
                       name="endDate"
                       type="date"
-                      value={formData.endDate}
-                      onChange={handleChange}
                       required
                       className="h-12 text-base border-2 focus:border-primary"
                     />
+                    {state?.errors?.endDate && (
+                      <div className="text-sm text-destructive">
+                        {state.errors.endDate.map((error) => (
+                          <p key={error}>{error}</p>
+                        ))}
+                      </div>
+                    )}
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="endTime" className="text-sm font-medium">
@@ -300,11 +227,16 @@ export default function CreateEventPage() {
                       id="endTime"
                       name="endTime"
                       type="time"
-                      value={formData.endTime}
-                      onChange={handleChange}
                       required
                       className="h-12 text-base border-2 focus:border-primary"
                     />
+                    {state?.errors?.endTime && (
+                      <div className="text-sm text-destructive">
+                        {state.errors.endTime.map((error) => (
+                          <p key={error}>{error}</p>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -318,11 +250,16 @@ export default function CreateEventPage() {
                     name="location"
                     type="text"
                     placeholder="Event location or 'Online'"
-                    value={formData.location}
-                    onChange={handleChange}
                     required
                     className="h-12 text-base border-2 focus:border-primary"
                   />
+                  {state?.errors?.location && (
+                    <div className="text-sm text-destructive">
+                      {state.errors.location.map((error) => (
+                        <p key={error}>{error}</p>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
                 {/* Category and Max Attendees */}
@@ -331,7 +268,7 @@ export default function CreateEventPage() {
                     <Label htmlFor="category" className="text-sm font-medium">
                       Category *
                     </Label>
-                    <Select value={formData.category} onValueChange={(value) => handleSelectChange("category", value)}>
+                    <Select name="category" required>
                       <SelectTrigger className="h-12 text-base border-2 focus:border-primary">
                         <SelectValue placeholder="Select category" />
                       </SelectTrigger>
@@ -343,6 +280,13 @@ export default function CreateEventPage() {
                         ))}
                       </SelectContent>
                     </Select>
+                    {state?.errors?.category && (
+                      <div className="text-sm text-destructive">
+                        {state.errors.category.map((error) => (
+                          <p key={error}>{error}</p>
+                        ))}
+                      </div>
+                    )}
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="maxAttendees" className="text-sm font-medium">
@@ -353,12 +297,17 @@ export default function CreateEventPage() {
                       name="maxAttendees"
                       type="number"
                       placeholder="100"
-                      value={formData.maxAttendees}
-                      onChange={handleChange}
                       required
                       min="1"
                       className="h-12 text-base border-2 focus:border-primary"
                     />
+                    {state?.errors?.maxAttendees && (
+                      <div className="text-sm text-destructive">
+                        {state.errors.maxAttendees.map((error) => (
+                          <p key={error}>{error}</p>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -373,8 +322,6 @@ export default function CreateEventPage() {
                       name="price"
                       type="number"
                       placeholder="0"
-                      value={formData.price}
-                      onChange={handleChange}
                       min="0"
                       step="0.01"
                       className="h-12 text-base border-2 focus:border-primary"
@@ -389,8 +336,6 @@ export default function CreateEventPage() {
                       name="tags"
                       type="text"
                       placeholder="networking, tech, startup (comma separated)"
-                      value={formData.tags}
-                      onChange={handleChange}
                       className="h-12 text-base border-2 focus:border-primary"
                     />
                   </div>
@@ -408,10 +353,10 @@ export default function CreateEventPage() {
                   </Button>
                   <Button
                     type="submit"
-                    disabled={loading}
+                    disabled={pending}
                     className="flex-1 h-12 text-base bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70"
                   >
-                    {loading ? (
+                    {pending ? (
                       <>
                         <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
                         Creating Event...

@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useActionState, useState } from "react"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -15,39 +15,28 @@ import {
 } from "@/components/ui/dialog"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { CheckCircle, AlertTriangle } from "lucide-react"
+import { registerForEvent, cancelRegistration } from "@/actions/events"
 
 interface RegistrationDialogProps {
+  eventId: string
   eventName: string
   isRegistered: boolean
-  onRegister: () => Promise<void>
-  onCancel: () => Promise<void>
+  onSuccess: () => void
   children: React.ReactNode
 }
 
-export function RegistrationDialog({
-  eventName,
-  isRegistered,
-  onRegister,
-  onCancel,
-  children,
-}: RegistrationDialogProps) {
+export function RegistrationDialog({ eventId, eventName, isRegistered, onSuccess, children }: RegistrationDialogProps) {
   const [open, setOpen] = useState(false)
-  const [loading, setLoading] = useState(false)
+  const [registerState, registerAction, registerPending] = useActionState(registerForEvent, undefined)
+  const [cancelState, cancelAction, cancelPending] = useActionState(cancelRegistration, undefined)
 
-  const handleAction = async () => {
-    setLoading(true)
-    try {
-      if (isRegistered) {
-        await onCancel()
-      } else {
-        await onRegister()
-      }
-      setOpen(false)
-    } catch (error) {
-      console.error("Action failed:", error)
-    } finally {
-      setLoading(false)
-    }
+  const currentState = isRegistered ? cancelState : registerState
+  const currentAction = isRegistered ? cancelAction : registerAction
+  const currentPending = isRegistered ? cancelPending : registerPending
+
+  if (currentState?.success) {
+    onSuccess()
+    setOpen(false)
   }
 
   return (
@@ -75,6 +64,13 @@ export function RegistrationDialog({
           </DialogDescription>
         </DialogHeader>
 
+        {currentState?.errors?.generic && (
+          <Alert variant="destructive">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertDescription>{currentState.errors.generic}</AlertDescription>
+          </Alert>
+        )}
+
         {!isRegistered && (
           <Alert>
             <CheckCircle className="h-4 w-4" />
@@ -88,15 +84,18 @@ export function RegistrationDialog({
           <Button variant="outline" onClick={() => setOpen(false)}>
             Cancel
           </Button>
-          <Button variant={isRegistered ? "destructive" : "default"} onClick={handleAction} disabled={loading}>
-            {loading
-              ? isRegistered
-                ? "Cancelling..."
-                : "Registering..."
-              : isRegistered
-                ? "Cancel Registration"
-                : "Register Now"}
-          </Button>
+          <form action={currentAction}>
+            <input type="hidden" name="eventId" value={eventId} />
+            <Button type="submit" variant={isRegistered ? "destructive" : "default"} disabled={currentPending}>
+              {currentPending
+                ? isRegistered
+                  ? "Cancelling..."
+                  : "Registering..."
+                : isRegistered
+                  ? "Cancel Registration"
+                  : "Register Now"}
+            </Button>
+          </form>
         </DialogFooter>
       </DialogContent>
     </Dialog>

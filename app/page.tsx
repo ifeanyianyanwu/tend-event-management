@@ -1,7 +1,7 @@
 "use client"
 
-import { RegistrationDialog } from "../src/components/registration-dialog"
+import  from "../src/components/ui/accordion"
 
 export default function SyntheticV0PageForDeployment() {
-  return <RegistrationDialog />
+  return < />
 }
