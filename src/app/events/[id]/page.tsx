@@ -46,7 +46,7 @@ export default function EventDetailsPage({ params }: { params: { id: string } })
       try {
         const eventData = await eventService.getEventById(params.id)
         setEvent(eventData)
-        setIsRegistered(eventData.isRegistered || false)
+        setIsRegistered(eventData?.isRegistered || false)
       } catch (error) {
         console.error("Failed to load event:", error)
       } finally {
