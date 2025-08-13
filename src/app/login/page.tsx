@@ -1,8 +1,6 @@
 "use client"
 
-import type React from "react"
-
-import { useState } from "react"
+import { useActionState, useState, useEffect } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
@@ -12,38 +10,18 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Calendar, Eye, EyeOff, Sparkles, ArrowLeft } from "lucide-react"
 import { ThemeToggle } from "@/components/theme-toggle"
-import { authApiService } from "@/services/auth-api.service"
+import { login } from "@/actions/auth"
 
 export default function LoginPage() {
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
+  const [state, action, pending] = useActionState(login, undefined)
   const [showPassword, setShowPassword] = useState(false)
-  const [pending, setPending] = useState(false)
-  const [error, setError] = useState<string | null>(null)
   const router = useRouter()
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setPending(true)
-    setError(null)
-
-    try {
-      const response = await authApiService.login({ email, password })
-
-      // Store tokens in localStorage or handle them as needed
-      if (response.access_token) {
-        localStorage.setItem("access_token", response.access_token)
-        localStorage.setItem("refresh_token", response.refresh_token)
-
-        // Client-side redirect to dashboard
-        router.push("/dashboard")
-      }
-    } catch (err: any) {
-      setError(err.response?.data?.message || err.message || "Login failed")
-    } finally {
-      setPending(false)
+  useEffect(() => {
+    if (state?.success) {
+      router.push("/dashboard")
     }
-  }
+  }, [state?.success, router])
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
@@ -89,10 +67,10 @@ export default function LoginPage() {
           {/* Login Form */}
           <Card className="border-2 bg-gradient-to-br from-card to-card/50">
             <CardContent className="p-8">
-              <form className="space-y-6" onSubmit={handleSubmit}>
-                {error && (
+              <form className="space-y-6" action={action}>
+                {state?.errors?.generic && (
                   <Alert variant="destructive" className="border-2">
-                    <AlertDescription>{error}</AlertDescription>
+                    <AlertDescription>{state.errors.generic}</AlertDescription>
                   </Alert>
                 )}
 
@@ -106,10 +84,15 @@ export default function LoginPage() {
                     type="email"
                     placeholder="Enter your email (try: admin@tend.com)"
                     required
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
                     className="h-12 text-base border-2 focus:border-primary"
                   />
+                  {state?.errors?.email && (
+                    <div className="text-sm text-destructive">
+                      {state.errors.email.map((error) => (
+                        <p key={error}>{error}</p>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
                 <div className="space-y-2">
@@ -123,8 +106,6 @@ export default function LoginPage() {
                       type={showPassword ? "text" : "password"}
                       placeholder="Enter your password (try: Password123!)"
                       required
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
                       className="h-12 text-base border-2 focus:border-primary pr-12"
                     />
                     <Button
@@ -137,6 +118,16 @@ export default function LoginPage() {
                       {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </Button>
                   </div>
+                  {state?.errors?.password && (
+                    <div className="text-sm text-destructive">
+                      <p>Password must:</p>
+                      <ul className="list-disc list-inside">
+                        {state.errors.password.map((error) => (
+                          <li key={error}>{error}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
                 </div>
 
                 <div className="flex items-center justify-between">

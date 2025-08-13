@@ -9,8 +9,8 @@ import {
 import { authApiService } from "@/services/auth-api.service"
 import { AxiosError } from "axios"
 import { cookies } from "next/headers"
-import { redirect } from "next/navigation"
 import { createSession, deleteSession } from "@/lib/session"
+import { redirect } from "next/navigation"
 
 type ReturnState = SigninFormState & { errors?: { generic?: string } }
 type SignupReturnState = SignupFormState & { errors?: { generic?: string } }
@@ -58,10 +58,12 @@ export async function login(_state: SigninFormState, formData: FormData): Promis
       maxAge: 60 * 60 * 24 * 30, // 30 days
     })
 
-    // Create session
-    await createSession(res.user.id)
+    // Create session if user data is available
+    if (res.user?.id) {
+      await createSession(res.user.id)
+    }
 
-    redirect("/dashboard")
+    return { success: true }
   } catch (error) {
     return handleError(error)
   }
