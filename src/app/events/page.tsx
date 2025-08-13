@@ -9,8 +9,8 @@ import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Calendar, Search, MapPin, Clock, Users, User, Sparkles } from "lucide-react"
 import { ThemeToggle } from "@/components/theme-toggle"
-import { EventService } from "@/services/event.service"
-import { RegistrationService } from "@/services/registration.service"
+import { eventService } from "@/services/event.service"
+import { registrationService } from "@/services/registration.service"
 
 export default function EventsPage() {
   const [events, setEvents] = useState<any[]>([])
@@ -23,7 +23,7 @@ export default function EventsPage() {
   useEffect(() => {
     const loadEvents = async () => {
       try {
-        const eventsData = await EventService.getAllEvents()
+        const eventsData = await eventService.getEvents()
         setEvents(eventsData)
       } catch (error) {
         console.error("Failed to load events:", error)
@@ -63,7 +63,7 @@ export default function EventsPage() {
   const handleRegister = async (eventId: string) => {
     setRegistering(eventId)
     try {
-      const result = await RegistrationService.registerForEvent(eventId)
+      const result = await registrationService.registerForEvent(eventId)
       if (result.success) {
         // Update the event in the list
         setEvents(

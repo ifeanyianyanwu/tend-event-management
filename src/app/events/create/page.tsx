@@ -14,7 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Calendar, ArrowLeft, Sparkles, User, AlertCircle, CheckCircle } from "lucide-react"
 import { ThemeToggle } from "@/components/theme-toggle"
-import { EventService } from "@/services/event.service"
+import { eventService } from "@/services/event.service"
 
 export default function CreateEventPage() {
   const [formData, setFormData] = useState({
@@ -108,7 +108,7 @@ export default function CreateEventPage() {
         creator: "John Doe", // In a real app, this would come from auth
       }
 
-      const result = await EventService.createEvent(eventData)
+      const result = await eventService.createEvent(eventData)
       if (result.success) {
         setSuccess(true)
         setTimeout(() => {

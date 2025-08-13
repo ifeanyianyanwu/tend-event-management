@@ -30,8 +30,8 @@ import {
   User,
 } from "lucide-react"
 import { ThemeToggle } from "@/components/theme-toggle"
-import { EventService } from "@/services/event.service"
-import { RegistrationService } from "@/services/registration.service"
+import { eventService } from "@/services/event.service"
+import { registrationService } from "@/services/registration.service"
 
 export default function EventDetailsPage({ params }: { params: { id: string } }) {
   const [event, setEvent] = useState<any>(null)
@@ -44,7 +44,7 @@ export default function EventDetailsPage({ params }: { params: { id: string } })
   useEffect(() => {
     const loadEvent = async () => {
       try {
-        const eventData = await EventService.getEventById(params.id)
+        const eventData = await eventService.getEventById(params.id)
         setEvent(eventData)
         setIsRegistered(eventData.isRegistered || false)
       } catch (error) {
@@ -76,7 +76,7 @@ export default function EventDetailsPage({ params }: { params: { id: string } })
   const handleRegister = async () => {
     setRegistering(true)
     try {
-      const result = await RegistrationService.registerForEvent(params.id)
+      const result = await registrationService.registerForEvent(params.id)
       if (result.success) {
         setIsRegistered(true)
         setShowRegistrationDialog(false)
