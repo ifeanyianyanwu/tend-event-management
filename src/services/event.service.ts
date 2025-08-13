@@ -102,6 +102,11 @@ export class EventService {
     return this.mockEvents.find((event) => event.id === id)
   }
 
+  getMyEvents(): any[] {
+    // Return a subset of events as if they belong to the current user
+    return this.mockEvents.slice(0, 3) // Return first 3 events as user's events
+  }
+
   // Added missing getEvent method that TicketService expects
   async getEvent(id: string): Promise<any> {
     await new Promise((resolve) => setTimeout(resolve, 300))
