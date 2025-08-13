@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Calendar, MapPin, Clock, Download, Share2, QrCode, ArrowLeft, CheckCircle, AlertCircle } from "lucide-react"
-import { TicketService, type Ticket } from "@/services/ticket.service"
+import { ticketService, type Ticket } from "@/services/ticket.service"
 
 export default function TicketPage() {
   const params = useParams()
@@ -25,7 +25,7 @@ export default function TicketPage() {
     const loadTicket = async () => {
       try {
         setLoading(true)
-        const ticketData = await TicketService.getTicket(eventId)
+        const ticketData = await ticketService.getTicket(eventId)
 
         if (!ticketData) {
           setError("Ticket not found")
@@ -51,7 +51,7 @@ export default function TicketPage() {
 
     try {
       setDownloading(true)
-      const pdfData = await TicketService.downloadTicket(ticket.id)
+      const pdfData = await ticketService.downloadTicket(ticket.id)
 
       // Create download link
       const link = document.createElement("a")
