@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -9,86 +9,31 @@ import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Calendar, Search, MapPin, Clock, Users, User, Sparkles } from "lucide-react"
 import { ThemeToggle } from "@/components/theme-toggle"
-
-// Mock events data
-const mockEvents = [
-  {
-    id: "1",
-    name: "Tech Conference 2024",
-    description: "Annual technology conference featuring industry leaders and innovative workshops",
-    start_time: "2024-03-15T09:00:00Z",
-    end_time: "2024-03-15T17:00:00Z",
-    location: "Convention Center, Downtown",
-    status: "UPCOMING",
-    attendees: 150,
-    maxAttendees: 200,
-    creator: "TechCorp",
-    category: "Technology",
-    isRegistered: false,
-  },
-  {
-    id: "2",
-    name: "Digital Marketing Workshop",
-    description: "Learn the latest digital marketing strategies and tools",
-    start_time: "2024-03-20T14:00:00Z",
-    end_time: "2024-03-20T16:00:00Z",
-    location: "Online",
-    status: "UPCOMING",
-    attendees: 45,
-    maxAttendees: 100,
-    creator: "Marketing Pro",
-    category: "Business",
-    isRegistered: true,
-  },
-  {
-    id: "3",
-    name: "AI & Machine Learning Summit",
-    description: "Explore the future of artificial intelligence and machine learning",
-    start_time: "2024-03-25T10:00:00Z",
-    end_time: "2024-03-25T18:00:00Z",
-    location: "Tech Hub, Silicon Valley",
-    status: "UPCOMING",
-    attendees: 300,
-    maxAttendees: 500,
-    creator: "AI Institute",
-    category: "Technology",
-    isRegistered: false,
-  },
-  {
-    id: "4",
-    name: "Startup Networking Event",
-    description: "Connect with entrepreneurs, investors, and startup enthusiasts",
-    start_time: "2024-03-30T18:00:00Z",
-    end_time: "2024-03-30T21:00:00Z",
-    location: "Innovation Center",
-    status: "UPCOMING",
-    attendees: 80,
-    maxAttendees: 150,
-    creator: "Startup Hub",
-    category: "Networking",
-    isRegistered: false,
-  },
-  {
-    id: "5",
-    name: "Web Development Bootcamp",
-    description: "Intensive 3-day bootcamp covering modern web development",
-    start_time: "2024-04-05T09:00:00Z",
-    end_time: "2024-04-07T17:00:00Z",
-    location: "Code Academy",
-    status: "UPCOMING",
-    attendees: 25,
-    maxAttendees: 30,
-    creator: "Code Masters",
-    category: "Education",
-    isRegistered: false,
-  },
-]
+import { EventService } from "@/services/event.service"
+import { RegistrationService } from "@/services/registration.service"
 
 export default function EventsPage() {
+  const [events, setEvents] = useState<any[]>([])
   const [searchTerm, setSearchTerm] = useState("")
   const [categoryFilter, setCategoryFilter] = useState("all")
   const [locationFilter, setLocationFilter] = useState("all")
   const [registering, setRegistering] = useState<string | null>(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const loadEvents = async () => {
+      try {
+        const eventsData = await EventService.getAllEvents()
+        setEvents(eventsData)
+      } catch (error) {
+        console.error("Failed to load events:", error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    loadEvents()
+  }, [])
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString("en-US", {
@@ -118,18 +63,23 @@ export default function EventsPage() {
   const handleRegister = async (eventId: string) => {
     setRegistering(eventId)
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000))
-      // Update the event registration status
-      // In real app, this would update the state/refetch data
+      const result = await RegistrationService.registerForEvent(eventId)
+      if (result.success) {
+        // Update the event in the list
+        setEvents(
+          events.map((event) =>
+            event.id === eventId ? { ...event, isRegistered: true, attendees: event.attendees + 1 } : event,
+          ),
+        )
+      }
     } catch (error) {
-      console.error("Registration failed")
+      console.error("Registration failed:", error)
     } finally {
       setRegistering(null)
     }
   }
 
-  const filteredEvents = mockEvents.filter((event) => {
+  const filteredEvents = events.filter((event) => {
     const matchesSearch =
       event.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       event.description.toLowerCase().includes(searchTerm.toLowerCase())
@@ -142,7 +92,15 @@ export default function EventsPage() {
     return matchesSearch && matchesCategory && matchesLocation
   })
 
-  const categories = ["all", ...Array.from(new Set(mockEvents.map((event) => event.category)))]
+  const categories = ["all", ...Array.from(new Set(events.map((event) => event.category)))]
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
@@ -155,7 +113,7 @@ export default function EventsPage() {
               <Sparkles className="h-3 w-3 text-primary absolute -top-1 -right-1" />
             </div>
             <h1 className="text-2xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
-              EventHub
+              Tend
             </h1>
           </div>
           <div className="flex items-center space-x-4">
@@ -238,7 +196,7 @@ export default function EventsPage() {
         {/* Results Summary */}
         <div className="mb-6">
           <p className="text-muted-foreground">
-            Showing {filteredEvents.length} of {mockEvents.length} events
+            Showing {filteredEvents.length} of {events.length} events
           </p>
         </div>
 

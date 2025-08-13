@@ -1,10 +1,7 @@
 "use client"
 
-import type React from "react"
-
-import { useState } from "react"
+import { useActionState, useState } from "react"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -12,77 +9,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Calendar, Eye, EyeOff, Sparkles, ArrowLeft, CheckCircle } from "lucide-react"
 import { ThemeToggle } from "@/components/theme-toggle"
+import { signup } from "@/actions/auth"
 
 export default function SignupPage() {
-  const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    password: "",
-    confirmPassword: "",
-  })
+  const [state, action, pending] = useActionState(signup, undefined)
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState("")
-  const [success, setSuccess] = useState(false)
-  const router = useRouter()
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData((prev) => ({
-      ...prev,
-      [e.target.name]: e.target.value,
-    }))
-  }
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setLoading(true)
-    setError("")
-
-    if (formData.password !== formData.confirmPassword) {
-      setError("Passwords do not match")
-      setLoading(false)
-      return
-    }
-
-    try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 2000))
-      setSuccess(true)
-
-      // Redirect after success
-      setTimeout(() => {
-        router.push("/dashboard")
-      }, 2000)
-    } catch (err) {
-      setError("Failed to create account. Please try again.")
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  if (success) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20 flex items-center justify-center">
-        <Card className="w-full max-w-md mx-4 border-2 bg-gradient-to-br from-card to-card/50">
-          <CardContent className="pt-6 text-center">
-            <div className="mx-auto mb-4 p-3 bg-gradient-to-br from-green-500/10 to-green-500/5 rounded-full w-fit">
-              <CheckCircle className="h-12 w-12 text-green-500" />
-            </div>
-            <h2 className="text-2xl font-bold mb-2">Welcome to EventHub!</h2>
-            <p className="text-muted-foreground mb-6">
-              Your account has been created successfully. Redirecting to your dashboard...
-            </p>
-            <div className="animate-pulse">
-              <div className="h-2 bg-primary/20 rounded-full overflow-hidden">
-                <div className="h-full bg-gradient-to-r from-primary to-primary/80 rounded-full animate-pulse" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    )
-  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
@@ -103,7 +35,7 @@ export default function SignupPage() {
                   <Sparkles className="h-2 w-2 text-primary absolute -top-0.5 -right-0.5" />
                 </div>
                 <h1 className="text-xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
-                  EventHub
+                  Tend
                 </h1>
               </div>
             </div>
@@ -118,11 +50,11 @@ export default function SignupPage() {
           <Card className="mb-8 border-2 bg-gradient-to-br from-card to-card/50 text-center">
             <CardHeader>
               <div className="mx-auto mb-4 p-3 bg-gradient-to-br from-primary/10 to-primary/5 rounded-2xl w-fit">
-                <Sparkles className="h-8 w-8 text-primary" />
+                <CheckCircle className="h-8 w-8 text-primary" />
               </div>
-              <CardTitle className="text-2xl">Join EventHub</CardTitle>
+              <CardTitle className="text-2xl">Join Tend</CardTitle>
               <CardDescription className="text-base">
-                Create your account to start organizing and discovering events
+                Create your account to start managing amazing events
               </CardDescription>
             </CardHeader>
           </Card>
@@ -130,10 +62,10 @@ export default function SignupPage() {
           {/* Signup Form */}
           <Card className="border-2 bg-gradient-to-br from-card to-card/50">
             <CardContent className="p-8">
-              <form onSubmit={handleSubmit} className="space-y-6">
-                {error && (
+              <form className="space-y-6" action={action}>
+                {state?.errors?.generic && (
                   <Alert variant="destructive" className="border-2">
-                    <AlertDescription>{error}</AlertDescription>
+                    <AlertDescription>{state.errors.generic}</AlertDescription>
                   </Alert>
                 )}
 
@@ -146,11 +78,16 @@ export default function SignupPage() {
                     name="name"
                     type="text"
                     placeholder="Enter your full name"
-                    value={formData.name}
-                    onChange={handleChange}
                     required
                     className="h-12 text-base border-2 focus:border-primary"
                   />
+                  {state?.errors?.name && (
+                    <div className="text-sm text-destructive">
+                      {state.errors.name.map((error) => (
+                        <p key={error}>{error}</p>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
                 <div className="space-y-2">
@@ -162,11 +99,16 @@ export default function SignupPage() {
                     name="email"
                     type="email"
                     placeholder="Enter your email"
-                    value={formData.email}
-                    onChange={handleChange}
                     required
                     className="h-12 text-base border-2 focus:border-primary"
                   />
+                  {state?.errors?.email && (
+                    <div className="text-sm text-destructive">
+                      {state.errors.email.map((error) => (
+                        <p key={error}>{error}</p>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
                 <div className="space-y-2">
@@ -178,9 +120,7 @@ export default function SignupPage() {
                       id="password"
                       name="password"
                       type={showPassword ? "text" : "password"}
-                      placeholder="Create a password"
-                      value={formData.password}
-                      onChange={handleChange}
+                      placeholder="Create a strong password"
                       required
                       className="h-12 text-base border-2 focus:border-primary pr-12"
                     />
@@ -194,6 +134,16 @@ export default function SignupPage() {
                       {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </Button>
                   </div>
+                  {state?.errors?.password && (
+                    <div className="text-sm text-destructive">
+                      <p>Password must:</p>
+                      <ul className="list-disc list-inside">
+                        {state.errors.password.map((error) => (
+                          <li key={error}>{error}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
                 </div>
 
                 <div className="space-y-2">
@@ -206,8 +156,6 @@ export default function SignupPage() {
                       name="confirmPassword"
                       type={showConfirmPassword ? "text" : "password"}
                       placeholder="Confirm your password"
-                      value={formData.confirmPassword}
-                      onChange={handleChange}
                       required
                       className="h-12 text-base border-2 focus:border-primary pr-12"
                     />
@@ -221,14 +169,21 @@ export default function SignupPage() {
                       {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </Button>
                   </div>
+                  {state?.errors?.confirmPassword && (
+                    <div className="text-sm text-destructive">
+                      {state.errors.confirmPassword.map((error) => (
+                        <p key={error}>{error}</p>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
                 <Button
                   type="submit"
-                  disabled={loading}
+                  disabled={pending}
                   className="w-full h-12 text-base bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70"
                 >
-                  {loading ? (
+                  {pending ? (
                     <>
                       <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
                       Creating Account...

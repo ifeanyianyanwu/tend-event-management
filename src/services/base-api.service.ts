@@ -1,79 +1,61 @@
-import axios, { AxiosInstance, AxiosResponse, AxiosError } from "axios";
+import axios, { type AxiosInstance, type AxiosRequestConfig, type AxiosResponse } from "axios"
 
-export abstract class BaseApiService {
-  protected instance: AxiosInstance;
+export class BaseApiService {
+  protected api: AxiosInstance
 
   constructor() {
-    this.instance = axios.create({
-      baseURL: process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080",
+    this.api = axios.create({
+      baseURL: process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000/api",
+      timeout: 10000,
       headers: {
         "Content-Type": "application/json",
       },
-      withCredentials: true,
-    });
+    })
 
-    this.instance.interceptors.response.use(
-      (response: AxiosResponse) => response,
-      (error: AxiosError) => this.handleError(error)
-    );
+    // Request interceptor to add auth token
+    this.api.interceptors.request.use(
+      (config) => {
+        // In a real app, you would get the token from cookies or storage
+        // For now, we'll skip this since we're using mock services
+        return config
+      },
+      (error) => {
+        return Promise.reject(error)
+      },
+    )
+
+    // Response interceptor for error handling
+    this.api.interceptors.response.use(
+      (response) => response,
+      (error) => {
+        if (error.response?.status === 401) {
+          // Handle unauthorized access
+          if (typeof window !== "undefined") {
+            window.location.href = "/login"
+          }
+        }
+        return Promise.reject(error)
+      },
+    )
   }
 
-  protected handleError(error: AxiosError): Promise<never> {
-    if (error.response) {
-      const { status } = error.response;
-      if (status === 401) {
-        console.error("Unauthorized: Invalid or missing token");
-      }
-      console.error(`API Error: ${status} - ${error.message}`);
-    } else {
-      console.error("Network Error:", error.message);
-    }
-    return Promise.reject(error);
+  protected async get<T>(url: string, config?: AxiosRequestConfig): Promise<T> {
+    const response: AxiosResponse<T> = await this.api.get(url, config)
+    return response.data
   }
 
-  protected async get<T>(
-    url: string,
-    params?: Record<string, unknown>,
-    cookie?: string
-  ): Promise<T> {
-    const headers = cookie ? { Cookie: `access_token=${cookie}` } : {};
-    const response = await this.instance.get<T>(url, { params, headers });
-    return response.data;
+  protected async post<T>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T> {
+    const response: AxiosResponse<T> = await this.api.post(url, data, config)
+    return response.data
   }
 
-  protected async post<T>(
-    url: string,
-    data?: unknown,
-    cookie?: string
-  ): Promise<T> {
-    const headers = cookie ? { Cookie: `access_token=${cookie}` } : {};
-    const response = await this.instance.post<T>(url, data, { headers });
-    return response.data;
+  protected async put<T>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T> {
+    const response: AxiosResponse<T> = await this.api.put(url, data, config)
+    return response.data
   }
 
-  protected async put<T>(
-    url: string,
-    data?: unknown,
-    cookie?: string
-  ): Promise<T> {
-    const headers = cookie ? { Cookie: `access_token=${cookie}` } : {};
-    const response = await this.instance.put<T>(url, data, { headers });
-    return response.data;
-  }
-
-  protected async patch<T>(
-    url: string,
-    data?: unknown,
-    cookie?: string
-  ): Promise<T> {
-    const headers = cookie ? { Cookie: `access_token=${cookie}` } : {};
-    const response = await this.instance.patch<T>(url, data, { headers });
-    return response.data;
-  }
-
-  protected async delete<T>(url: string, cookie?: string): Promise<T> {
-    const headers = cookie ? { Cookie: `access_token=${cookie}` } : {};
-    const response = await this.instance.delete<T>(url, { headers });
-    return response.data;
+  protected async delete<T>(url: string, config?: AxiosRequestConfig): Promise<T> {
+    const response: AxiosResponse<T> = await this.api.delete(url, config)
+    return response.data
   }
 }

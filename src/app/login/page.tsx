@@ -1,10 +1,7 @@
 "use client"
 
-import type React from "react"
-
-import { useState } from "react"
+import { useActionState, useState } from "react"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -12,39 +9,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Calendar, Eye, EyeOff, Sparkles, ArrowLeft } from "lucide-react"
 import { ThemeToggle } from "@/components/theme-toggle"
+import { login } from "@/actions/auth"
 
 export default function LoginPage() {
-  const [formData, setFormData] = useState({
-    email: "",
-    password: "",
-  })
+  const [state, action, pending] = useActionState(login, undefined)
   const [showPassword, setShowPassword] = useState(false)
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState("")
-  const router = useRouter()
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData((prev) => ({
-      ...prev,
-      [e.target.name]: e.target.value,
-    }))
-  }
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setLoading(true)
-    setError("")
-
-    try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000))
-      router.push("/dashboard")
-    } catch (err) {
-      setError("Invalid email or password. Please try again.")
-    } finally {
-      setLoading(false)
-    }
-  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
@@ -65,7 +34,7 @@ export default function LoginPage() {
                   <Sparkles className="h-2 w-2 text-primary absolute -top-0.5 -right-0.5" />
                 </div>
                 <h1 className="text-xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
-                  EventHub
+                  Tend
                 </h1>
               </div>
             </div>
@@ -83,17 +52,17 @@ export default function LoginPage() {
                 <Calendar className="h-8 w-8 text-primary" />
               </div>
               <CardTitle className="text-2xl">Welcome Back</CardTitle>
-              <CardDescription className="text-base">Sign in to your EventHub account to continue</CardDescription>
+              <CardDescription className="text-base">Sign in to your Tend account to continue</CardDescription>
             </CardHeader>
           </Card>
 
           {/* Login Form */}
           <Card className="border-2 bg-gradient-to-br from-card to-card/50">
             <CardContent className="p-8">
-              <form onSubmit={handleSubmit} className="space-y-6">
-                {error && (
+              <form className="space-y-6" action={action}>
+                {state?.errors?.generic && (
                   <Alert variant="destructive" className="border-2">
-                    <AlertDescription>{error}</AlertDescription>
+                    <AlertDescription>{state.errors.generic}</AlertDescription>
                   </Alert>
                 )}
 
@@ -105,12 +74,17 @@ export default function LoginPage() {
                     id="email"
                     name="email"
                     type="email"
-                    placeholder="Enter your email"
-                    value={formData.email}
-                    onChange={handleChange}
+                    placeholder="Enter your email (try: admin@tend.com)"
                     required
                     className="h-12 text-base border-2 focus:border-primary"
                   />
+                  {state?.errors?.email && (
+                    <div className="text-sm text-destructive">
+                      {state.errors.email.map((error) => (
+                        <p key={error}>{error}</p>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
                 <div className="space-y-2">
@@ -122,9 +96,7 @@ export default function LoginPage() {
                       id="password"
                       name="password"
                       type={showPassword ? "text" : "password"}
-                      placeholder="Enter your password"
-                      value={formData.password}
-                      onChange={handleChange}
+                      placeholder="Enter your password (try: Password123!)"
                       required
                       className="h-12 text-base border-2 focus:border-primary pr-12"
                     />
@@ -138,6 +110,16 @@ export default function LoginPage() {
                       {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </Button>
                   </div>
+                  {state?.errors?.password && (
+                    <div className="text-sm text-destructive">
+                      <p>Password must:</p>
+                      <ul className="list-disc list-inside">
+                        {state.errors.password.map((error) => (
+                          <li key={error}>{error}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
                 </div>
 
                 <div className="flex items-center justify-between">
@@ -148,10 +130,10 @@ export default function LoginPage() {
 
                 <Button
                   type="submit"
-                  disabled={loading}
+                  disabled={pending}
                   className="w-full h-12 text-base bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70"
                 >
-                  {loading ? (
+                  {pending ? (
                     <>
                       <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
                       Signing In...

@@ -1,390 +1,294 @@
 "use client"
 
-import { useState } from "react"
-import Link from "next/link"
+import { useEffect, useState } from "react"
+import { useParams, useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Separator } from "@/components/ui/separator"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog"
-import {
-  Calendar,
-  MapPin,
-  Clock,
-  QrCode,
-  Download,
-  Share2,
-  ArrowLeft,
-  CheckCircle,
-  AlertTriangle,
-  Sparkles,
-  User,
-  Mail,
-  Phone,
-} from "lucide-react"
-import { ThemeToggle } from "@/components/theme-toggle"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Calendar, MapPin, Clock, Download, Share2, QrCode, ArrowLeft, CheckCircle, AlertCircle } from "lucide-react"
+import { TicketService, type Ticket } from "@/services/ticket.service"
 
-// Mock ticket data
-const mockTicket = {
-  id: "TKT-2024-001234",
-  eventId: "1",
-  eventName: "Tech Conference 2024",
-  eventDescription: "Annual technology conference featuring industry leaders",
-  startTime: "2024-03-15T09:00:00Z",
-  endTime: "2024-03-15T17:00:00Z",
-  location: "Convention Center, 123 Tech Street, San Francisco, CA",
-  attendeeName: "John Doe",
-  attendeeEmail: "john.doe@example.com",
-  registrationDate: "2024-02-10T10:00:00Z",
-  status: "CONFIRMED",
-  qrCode:
-    "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgZmlsbD0iIzAwMCIvPgogIDxyZWN0IHg9IjEwIiB5PSIxMCIgd2lkdGg9IjE4MCIgaGVpZ2h0PSIxODAiIGZpbGw9IiNmZmYiLz4KICA8dGV4dCB4PSIxMDAiIHk9IjEwNSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1mYW1pbHk9Im1vbm9zcGFjZSIgZm9udC1zaXplPSIxMiI+UVIgQ29kZTwvdGV4dD4KPC9zdmc+",
-  seatNumber: null,
-  specialInstructions: "Please arrive 30 minutes early for check-in. Bring a valid ID.",
-}
+export default function TicketPage() {
+  const params = useParams()
+  const router = useRouter()
+  const eventId = params.eventId as string
 
-export default function TicketPage({ params }: { params: { eventId: string } }) {
-  const [showCancelDialog, setShowCancelDialog] = useState(false)
-  const [cancelling, setCancelling] = useState(false)
+  const [ticket, setTicket] = useState<Ticket | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [downloading, setDownloading] = useState(false)
+  const [sharing, setSharing] = useState(false)
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("en-US", {
-      weekday: "long",
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    })
-  }
-
-  const formatTime = (dateString: string) => {
-    return new Date(dateString).toLocaleTimeString("en-US", {
-      hour: "2-digit",
-      minute: "2-digit",
-    })
-  }
-
-  const handleDownload = () => {
-    // Create a simple ticket download
-    const ticketData = `
-Event: ${mockTicket.eventName}
-Date: ${formatDate(mockTicket.startTime)}
-Time: ${formatTime(mockTicket.startTime)} - ${formatTime(mockTicket.endTime)}
-Location: ${mockTicket.location}
-Ticket ID: ${mockTicket.id}
-Attendee: ${mockTicket.attendeeName}
-    `.trim()
-
-    const blob = new Blob([ticketData], { type: "text/plain" })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement("a")
-    a.href = url
-    a.download = `ticket-${mockTicket.id}.txt`
-    document.body.appendChild(a)
-    a.click()
-    document.body.removeChild(a)
-    URL.revokeObjectURL(url)
-  }
-
-  const handleShare = async () => {
-    if (navigator.share) {
+  useEffect(() => {
+    const loadTicket = async () => {
       try {
-        await navigator.share({
-          title: `My ticket for ${mockTicket.eventName}`,
-          text: `I'm attending ${mockTicket.eventName} on ${formatDate(mockTicket.startTime)}`,
-          url: window.location.href,
-        })
-      } catch (error) {
-        console.log("Error sharing:", error)
+        setLoading(true)
+        const ticketData = await TicketService.getTicket(eventId)
+
+        if (!ticketData) {
+          setError("Ticket not found")
+          return
+        }
+
+        setTicket(ticketData)
+      } catch (err) {
+        setError("Failed to load ticket")
+        console.error("Error loading ticket:", err)
+      } finally {
+        setLoading(false)
       }
+    }
+
+    if (eventId) {
+      loadTicket()
+    }
+  }, [eventId])
+
+  const handleDownload = async () => {
+    if (!ticket) return
+
+    try {
+      setDownloading(true)
+      const pdfData = await TicketService.downloadTicket(ticket.id)
+
+      // Create download link
+      const link = document.createElement("a")
+      link.href = pdfData
+      link.download = `ticket-${ticket.id}.pdf`
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+    } catch (err) {
+      console.error("Error downloading ticket:", err)
+    } finally {
+      setDownloading(false)
     }
   }
 
-  const handleCancelRegistration = async () => {
-    setCancelling(true)
+  const handleShare = async () => {
+    if (!ticket) return
+
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 2000))
-      // Redirect to events page after cancellation
-      window.location.href = "/events"
-    } catch (error) {
-      console.error("Failed to cancel registration")
+      setSharing(true)
+
+      if (navigator.share) {
+        await navigator.share({
+          title: `Ticket for ${ticket.event.name}`,
+          text: `Check out my ticket for ${ticket.event.name}`,
+          url: window.location.href,
+        })
+      } else {
+        // Fallback to copying to clipboard
+        await navigator.clipboard.writeText(window.location.href)
+        alert("Ticket link copied to clipboard!")
+      }
+    } catch (err) {
+      console.error("Error sharing ticket:", err)
     } finally {
-      setCancelling(false)
-      setShowCancelDialog(false)
+      setSharing(false)
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
+        <div className="container mx-auto px-4 py-8">
+          <div className="flex items-center justify-center min-h-[400px]">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4" />
+              <p className="text-muted-foreground">Loading your ticket...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  if (error || !ticket) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
+        <div className="container mx-auto px-4 py-8">
+          <Button variant="ghost" onClick={() => router.back()} className="mb-6">
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back
+          </Button>
+
+          <Alert variant="destructive" className="max-w-md mx-auto">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>{error || "Ticket not found"}</AlertDescription>
+          </Alert>
+        </div>
+      </div>
+    )
+  }
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "active":
+        return "bg-green-500"
+      case "used":
+        return "bg-gray-500"
+      case "cancelled":
+        return "bg-red-500"
+      default:
+        return "bg-gray-500"
+    }
+  }
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case "active":
+        return <CheckCircle className="h-4 w-4" />
+      case "used":
+        return <Clock className="h-4 w-4" />
+      case "cancelled":
+        return <AlertCircle className="h-4 w-4" />
+      default:
+        return <Clock className="h-4 w-4" />
     }
   }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
-      {/* Header */}
-      <header className="border-b bg-background/80 backdrop-blur-sm sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <Button variant="ghost" size="sm" asChild>
-                <Link href={`/events/${params.eventId}`}>
-                  <ArrowLeft className="h-4 w-4 mr-2" />
-                  Back to Event
-                </Link>
-              </Button>
-              <div className="flex items-center space-x-3">
-                <div className="relative">
-                  <Calendar className="h-6 w-6 text-primary" />
-                  <Sparkles className="h-2 w-2 text-primary absolute -top-0.5 -right-0.5" />
-                </div>
-                <h1 className="text-xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
-                  EventHub
-                </h1>
-              </div>
-            </div>
-            <div className="flex items-center space-x-2">
-              <ThemeToggle />
-              <Button variant="outline" onClick={handleShare}>
-                <Share2 className="h-4 w-4 mr-2" />
-                Share
-              </Button>
-              <div className="flex items-center space-x-2">
-                <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
-                  <User className="h-4 w-4 text-primary" />
-                </div>
-                <span className="text-sm font-medium">John Doe</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </header>
-
       <div className="container mx-auto px-4 py-8">
-        <div className="max-w-4xl mx-auto">
-          {/* Page Header */}
-          <div className="mb-8 text-center">
-            <div className="inline-flex items-center space-x-2 bg-green-500/10 text-green-500 px-4 py-2 rounded-full text-sm font-medium mb-4">
-              <CheckCircle className="h-4 w-4" />
-              <span>Registration Confirmed</span>
-            </div>
-            <h1 className="text-3xl font-bold mb-2">Your Event Ticket</h1>
-            <p className="text-muted-foreground">Present this QR code at the event entrance for check-in</p>
-          </div>
+        <Button variant="ghost" onClick={() => router.back()} className="mb-6">
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Back
+        </Button>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Ticket Card */}
-            <div className="lg:col-span-2">
-              <Card className="border-2 bg-gradient-to-br from-card to-card/50 overflow-hidden">
-                {/* Ticket Header */}
-                <div className="bg-gradient-to-r from-primary/10 via-primary/5 to-primary/10 p-6 border-b">
-                  <div className="flex items-center justify-between mb-4">
-                    <Badge className="bg-green-500/10 text-green-500 border-green-500/20">{mockTicket.status}</Badge>
-                    <div className="text-sm text-muted-foreground">Ticket ID: {mockTicket.id}</div>
+        <div className="max-w-2xl mx-auto">
+          {/* Ticket Card */}
+          <Card className="border-2 bg-gradient-to-br from-card to-card/50 overflow-hidden">
+            {/* Event Image */}
+            <div className="aspect-video bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center">
+              <Calendar className="h-16 w-16 text-primary" />
+            </div>
+
+            <CardHeader className="text-center">
+              <div className="flex items-center justify-between mb-4">
+                <Badge variant="outline" className={`${getStatusColor(ticket.status)} text-white border-0`}>
+                  <span className="flex items-center space-x-1">
+                    {getStatusIcon(ticket.status)}
+                    <span className="capitalize">{ticket.status}</span>
+                  </span>
+                </Badge>
+                <Badge variant="outline">Ticket #{ticket.id.slice(-6)}</Badge>
+              </div>
+
+              <CardTitle className="text-2xl mb-2">{ticket.event.name}</CardTitle>
+              <CardDescription className="text-base">{ticket.event.description}</CardDescription>
+            </CardHeader>
+
+            <CardContent className="space-y-6">
+              {/* Event Details */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="flex items-center space-x-3">
+                  <div className="p-2 bg-primary/10 rounded-lg">
+                    <Calendar className="h-5 w-5 text-primary" />
                   </div>
-                  <h2 className="text-2xl font-bold mb-2">{mockTicket.eventName}</h2>
-                  <p className="text-muted-foreground">{mockTicket.eventDescription}</p>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Date</p>
+                    <p className="font-medium">{ticket.event.date}</p>
+                  </div>
                 </div>
 
-                <CardContent className="p-6">
-                  {/* Event Details */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                    <div className="space-y-4">
-                      <div className="flex items-center space-x-3">
-                        <div className="p-2 bg-primary/10 rounded-lg">
-                          <Calendar className="h-5 w-5 text-primary" />
-                        </div>
-                        <div>
-                          <div className="font-medium">Date</div>
-                          <div className="text-sm text-muted-foreground">{formatDate(mockTicket.startTime)}</div>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center space-x-3">
-                        <div className="p-2 bg-primary/10 rounded-lg">
-                          <Clock className="h-5 w-5 text-primary" />
-                        </div>
-                        <div>
-                          <div className="font-medium">Time</div>
-                          <div className="text-sm text-muted-foreground">
-                            {formatTime(mockTicket.startTime)} - {formatTime(mockTicket.endTime)}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="space-y-4">
-                      <div className="flex items-center space-x-3">
-                        <div className="p-2 bg-primary/10 rounded-lg">
-                          <MapPin className="h-5 w-5 text-primary" />
-                        </div>
-                        <div>
-                          <div className="font-medium">Location</div>
-                          <div className="text-sm text-muted-foreground">{mockTicket.location}</div>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center space-x-3">
-                        <div className="p-2 bg-primary/10 rounded-lg">
-                          <User className="h-5 w-5 text-primary" />
-                        </div>
-                        <div>
-                          <div className="font-medium">Attendee</div>
-                          <div className="text-sm text-muted-foreground">{mockTicket.attendeeName}</div>
-                        </div>
-                      </div>
-                    </div>
+                <div className="flex items-center space-x-3">
+                  <div className="p-2 bg-primary/10 rounded-lg">
+                    <MapPin className="h-5 w-5 text-primary" />
                   </div>
-
-                  <Separator className="my-6" />
-
-                  {/* Attendee Information */}
-                  <div className="space-y-4">
-                    <h3 className="font-semibold">Attendee Information</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="flex items-center space-x-3">
-                        <Mail className="h-4 w-4 text-primary" />
-                        <div>
-                          <div className="text-sm font-medium">Email</div>
-                          <div className="text-sm text-muted-foreground">{mockTicket.attendeeEmail}</div>
-                        </div>
-                      </div>
-                      <div className="flex items-center space-x-3">
-                        <Calendar className="h-4 w-4 text-primary" />
-                        <div>
-                          <div className="text-sm font-medium">Registered</div>
-                          <div className="text-sm text-muted-foreground">{formatDate(mockTicket.registrationDate)}</div>
-                        </div>
-                      </div>
-                    </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Location</p>
+                    <p className="font-medium">{ticket.event.location}</p>
                   </div>
+                </div>
+              </div>
 
-                  {mockTicket.specialInstructions && (
+              <Separator />
+
+              {/* QR Code Section */}
+              <div className="text-center">
+                <div className="inline-flex items-center justify-center w-32 h-32 bg-white border-2 border-dashed border-primary/30 rounded-lg mb-4">
+                  <QrCode className="h-16 w-16 text-primary" />
+                </div>
+                <p className="text-sm text-muted-foreground mb-2">QR Code</p>
+                <p className="font-mono text-sm bg-muted px-3 py-1 rounded">{ticket.qrCode}</p>
+              </div>
+
+              <Separator />
+
+              {/* Purchase Info */}
+              <div className="text-center text-sm text-muted-foreground">
+                <p>Purchased on {new Date(ticket.purchaseDate).toLocaleDateString()}</p>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex flex-col sm:flex-row gap-3">
+                <Button
+                  onClick={handleDownload}
+                  disabled={downloading}
+                  className="flex-1 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70"
+                >
+                  {downloading ? (
                     <>
-                      <Separator className="my-6" />
-                      <Alert className="border-2 bg-gradient-to-br from-blue-500/5 to-blue-500/10">
-                        <AlertTriangle className="h-4 w-4 text-blue-500" />
-                        <AlertDescription className="text-blue-700 dark:text-blue-400">
-                          <strong>Important:</strong> {mockTicket.specialInstructions}
-                        </AlertDescription>
-                      </Alert>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
+                      Downloading...
+                    </>
+                  ) : (
+                    <>
+                      <Download className="h-4 w-4 mr-2" />
+                      Download PDF
                     </>
                   )}
-                </CardContent>
-              </Card>
-            </div>
+                </Button>
 
-            {/* QR Code and Actions */}
-            <div className="space-y-6">
-              {/* QR Code Card */}
-              <Card className="border-2 bg-gradient-to-br from-card to-card/50">
-                <CardHeader className="text-center">
-                  <CardTitle className="flex items-center justify-center space-x-2">
-                    <QrCode className="h-5 w-5 text-primary" />
-                    <span>Entry QR Code</span>
-                  </CardTitle>
-                  <CardDescription>Show this code at the event entrance</CardDescription>
-                </CardHeader>
-                <CardContent className="text-center">
-                  <div className="bg-white p-4 rounded-lg inline-block mb-4">
-                    <img src={mockTicket.qrCode || "/placeholder.svg"} alt="QR Code" className="w-48 h-48 mx-auto" />
-                  </div>
-                  <div className="text-xs text-muted-foreground font-mono">{mockTicket.id}</div>
-                </CardContent>
-              </Card>
+                <Button
+                  variant="outline"
+                  onClick={handleShare}
+                  disabled={sharing}
+                  className="flex-1 border-2 bg-transparent"
+                >
+                  {sharing ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary mr-2" />
+                      Sharing...
+                    </>
+                  ) : (
+                    <>
+                      <Share2 className="h-4 w-4 mr-2" />
+                      Share Ticket
+                    </>
+                  )}
+                </Button>
+              </div>
 
-              {/* Actions Card */}
-              <Card className="border-2 bg-gradient-to-br from-card to-card/50">
-                <CardHeader>
-                  <CardTitle className="text-lg">Ticket Actions</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <Button
-                    onClick={handleDownload}
-                    className="w-full justify-start bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70"
-                  >
-                    <Download className="h-4 w-4 mr-2" />
-                    Download Ticket
-                  </Button>
+              {ticket.status === "active" && (
+                <Alert className="border-2 border-green-200 bg-green-50 dark:bg-green-950 dark:border-green-800">
+                  <CheckCircle className="h-4 w-4 text-green-600" />
+                  <AlertDescription className="text-green-800 dark:text-green-200">
+                    Your ticket is valid and ready to use. Present the QR code at the event entrance.
+                  </AlertDescription>
+                </Alert>
+              )}
 
-                  <Button variant="outline" className="w-full justify-start border-2 bg-transparent">
-                    <Calendar className="h-4 w-4 mr-2" />
-                    Add to Calendar
-                  </Button>
+              {ticket.status === "used" && (
+                <Alert className="border-2 border-gray-200 bg-gray-50 dark:bg-gray-950 dark:border-gray-800">
+                  <Clock className="h-4 w-4 text-gray-600" />
+                  <AlertDescription className="text-gray-800 dark:text-gray-200">
+                    This ticket has been used and is no longer valid for entry.
+                  </AlertDescription>
+                </Alert>
+              )}
 
-                  <Button
-                    variant="outline"
-                    onClick={handleShare}
-                    className="w-full justify-start border-2 bg-transparent"
-                  >
-                    <Share2 className="h-4 w-4 mr-2" />
-                    Share Ticket
-                  </Button>
-
-                  <Separator />
-
-                  <Dialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
-                    <DialogTrigger asChild>
-                      <Button variant="destructive" className="w-full justify-start">
-                        <AlertTriangle className="h-4 w-4 mr-2" />
-                        Cancel Registration
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent>
-                      <DialogHeader>
-                        <DialogTitle className="flex items-center space-x-2">
-                          <AlertTriangle className="h-5 w-5 text-red-600" />
-                          <span>Cancel Registration</span>
-                        </DialogTitle>
-                        <DialogDescription>
-                          Are you sure you want to cancel your registration for "{mockTicket.eventName}"? This action
-                          cannot be undone.
-                        </DialogDescription>
-                      </DialogHeader>
-                      <DialogFooter>
-                        <Button variant="outline" onClick={() => setShowCancelDialog(false)}>
-                          Keep Registration
-                        </Button>
-                        <Button variant="destructive" onClick={handleCancelRegistration} disabled={cancelling}>
-                          {cancelling ? (
-                            <>
-                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
-                              Cancelling...
-                            </>
-                          ) : (
-                            "Cancel Registration"
-                          )}
-                        </Button>
-                      </DialogFooter>
-                    </DialogContent>
-                  </Dialog>
-                </CardContent>
-              </Card>
-
-              {/* Help Card */}
-              <Card className="border-2 bg-gradient-to-br from-card to-card/50">
-                <CardHeader>
-                  <CardTitle className="text-lg">Need Help?</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3 text-sm text-muted-foreground">
-                  <div>• Save this ticket to your phone</div>
-                  <div>• Arrive 30 minutes early</div>
-                  <div>• Bring a valid photo ID</div>
-                  <div>• Contact support if you have issues</div>
-
-                  <Separator className="my-3" />
-
-                  <Button variant="outline" size="sm" className="w-full border-2 bg-transparent">
-                    <Phone className="h-4 w-4 mr-2" />
-                    Contact Support
-                  </Button>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
+              {ticket.status === "cancelled" && (
+                <Alert variant="destructive" className="border-2">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>This ticket has been cancelled and cannot be used for entry.</AlertDescription>
+                </Alert>
+              )}
+            </CardContent>
+          </Card>
         </div>
       </div>
     </div>

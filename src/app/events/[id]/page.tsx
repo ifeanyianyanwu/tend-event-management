@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -30,55 +30,32 @@ import {
   User,
 } from "lucide-react"
 import { ThemeToggle } from "@/components/theme-toggle"
-
-// Mock event data
-const mockEvent = {
-  id: "1",
-  name: "Tech Conference 2024",
-  description:
-    "Join us for the most comprehensive technology conference of the year. This event brings together industry leaders, innovative startups, and tech enthusiasts to explore the latest trends in artificial intelligence, blockchain, cloud computing, and more. Network with professionals, attend hands-on workshops, and gain insights that will shape the future of technology.",
-  longDescription: `
-    This comprehensive technology conference spans three days of intensive learning and networking opportunities. 
-    
-    Day 1: AI and Machine Learning
-    - Keynote: The Future of AI in Business
-    - Workshop: Building ML Models with TensorFlow
-    - Panel: Ethics in AI Development
-    
-    Day 2: Blockchain and Web3
-    - Keynote: Decentralized Finance Revolution
-    - Workshop: Smart Contract Development
-    - Panel: NFTs and Digital Ownership
-    
-    Day 3: Cloud and DevOps
-    - Keynote: Serverless Architecture at Scale
-    - Workshop: Kubernetes in Production
-    - Panel: Security in the Cloud Era
-    
-    All attendees will receive:
-    - Conference materials and swag bag
-    - Access to recorded sessions
-    - Networking lunch and coffee breaks
-    - Certificate of attendance
-  `,
-  start_time: "2024-03-15T09:00:00Z",
-  end_time: "2024-03-15T17:00:00Z",
-  location: "Convention Center, 123 Tech Street, San Francisco, CA",
-  status: "UPCOMING",
-  attendees: 150,
-  maxAttendees: 200,
-  creator: "TechCorp Events",
-  category: "Technology",
-  price: "Free",
-  isRegistered: false,
-  tags: ["Technology", "AI", "Blockchain", "Cloud", "Networking"],
-}
+import { EventService } from "@/services/event.service"
+import { RegistrationService } from "@/services/registration.service"
 
 export default function EventDetailsPage({ params }: { params: { id: string } }) {
+  const [event, setEvent] = useState<any>(null)
   const [registering, setRegistering] = useState(false)
-  const [isRegistered, setIsRegistered] = useState(mockEvent.isRegistered)
+  const [isRegistered, setIsRegistered] = useState(false)
   const [showRegistrationDialog, setShowRegistrationDialog] = useState(false)
   const [liked, setLiked] = useState(false)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const loadEvent = async () => {
+      try {
+        const eventData = await EventService.getEventById(params.id)
+        setEvent(eventData)
+        setIsRegistered(eventData.isRegistered || false)
+      } catch (error) {
+        console.error("Failed to load event:", error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    loadEvent()
+  }, [params.id])
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString("en-US", {
@@ -99,12 +76,14 @@ export default function EventDetailsPage({ params }: { params: { id: string } })
   const handleRegister = async () => {
     setRegistering(true)
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 2000))
-      setIsRegistered(true)
-      setShowRegistrationDialog(false)
+      const result = await RegistrationService.registerForEvent(params.id)
+      if (result.success) {
+        setIsRegistered(true)
+        setShowRegistrationDialog(false)
+        setEvent({ ...event, attendees: event.attendees + 1 })
+      }
     } catch (error) {
-      console.error("Registration failed")
+      console.error("Registration failed:", error)
     } finally {
       setRegistering(false)
     }
@@ -114,8 +93,8 @@ export default function EventDetailsPage({ params }: { params: { id: string } })
     if (navigator.share) {
       try {
         await navigator.share({
-          title: mockEvent.name,
-          text: mockEvent.description,
+          title: event.name,
+          text: event.description,
           url: window.location.href,
         })
       } catch (error) {
@@ -125,6 +104,31 @@ export default function EventDetailsPage({ params }: { params: { id: string } })
       // Fallback: copy to clipboard
       navigator.clipboard.writeText(window.location.href)
     }
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+      </div>
+    )
+  }
+
+  if (!event) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20 flex items-center justify-center">
+        <Card className="w-full max-w-md border-2 bg-gradient-to-br from-card to-card/50">
+          <CardContent className="text-center py-12">
+            <AlertCircle className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+            <h2 className="text-2xl font-bold mb-2">Event Not Found</h2>
+            <p className="text-muted-foreground mb-4">The event you're looking for doesn't exist.</p>
+            <Button asChild>
+              <Link href="/events">Browse Events</Link>
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    )
   }
 
   return (
@@ -146,7 +150,7 @@ export default function EventDetailsPage({ params }: { params: { id: string } })
                   <Sparkles className="h-2 w-2 text-primary absolute -top-0.5 -right-0.5" />
                 </div>
                 <h1 className="text-xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
-                  EventHub
+                  Tend
                 </h1>
               </div>
             </div>
@@ -177,27 +181,29 @@ export default function EventDetailsPage({ params }: { params: { id: string } })
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex-1">
                     <div className="flex items-center space-x-2 mb-2">
-                      <Badge className="bg-blue-500/10 text-blue-500 border-blue-500/20">{mockEvent.status}</Badge>
+                      <Badge className="bg-blue-500/10 text-blue-500 border-blue-500/20">{event.status}</Badge>
                       <Badge variant="outline" className="border-primary/20 text-primary">
-                        {mockEvent.category}
+                        {event.category}
                       </Badge>
-                      <Badge variant="outline">{mockEvent.price}</Badge>
+                      <Badge variant="outline">{event.price > 0 ? `$${event.price}` : "Free"}</Badge>
                     </div>
-                    <CardTitle className="text-3xl mb-2">{mockEvent.name}</CardTitle>
-                    <CardDescription className="text-lg">{mockEvent.description}</CardDescription>
+                    <CardTitle className="text-3xl mb-2">{event.name}</CardTitle>
+                    <CardDescription className="text-lg">{event.description}</CardDescription>
                   </div>
                   <Button variant="ghost" size="sm" onClick={() => setLiked(!liked)} className="ml-4">
                     <Heart className={`h-5 w-5 ${liked ? "fill-red-500 text-red-500" : ""}`} />
                   </Button>
                 </div>
 
-                <div className="flex flex-wrap gap-2">
-                  {mockEvent.tags.map((tag) => (
-                    <Badge key={tag} variant="secondary" className="text-xs">
-                      {tag}
-                    </Badge>
-                  ))}
-                </div>
+                {event.tags && (
+                  <div className="flex flex-wrap gap-2">
+                    {event.tags.map((tag: string) => (
+                      <Badge key={tag} variant="secondary" className="text-xs">
+                        {tag}
+                      </Badge>
+                    ))}
+                  </div>
+                )}
               </CardHeader>
             </Card>
 
@@ -218,7 +224,7 @@ export default function EventDetailsPage({ params }: { params: { id: string } })
                       </div>
                       <div>
                         <div className="font-medium">Date</div>
-                        <div className="text-sm text-muted-foreground">{formatDate(mockEvent.start_time)}</div>
+                        <div className="text-sm text-muted-foreground">{formatDate(event.start_time)}</div>
                       </div>
                     </div>
 
@@ -229,7 +235,7 @@ export default function EventDetailsPage({ params }: { params: { id: string } })
                       <div>
                         <div className="font-medium">Time</div>
                         <div className="text-sm text-muted-foreground">
-                          {formatTime(mockEvent.start_time)} - {formatTime(mockEvent.end_time)}
+                          {formatTime(event.start_time)} - {formatTime(event.end_time)}
                         </div>
                       </div>
                     </div>
@@ -242,7 +248,7 @@ export default function EventDetailsPage({ params }: { params: { id: string } })
                       </div>
                       <div>
                         <div className="font-medium">Location</div>
-                        <div className="text-sm text-muted-foreground">{mockEvent.location}</div>
+                        <div className="text-sm text-muted-foreground">{event.location}</div>
                       </div>
                     </div>
 
@@ -253,7 +259,7 @@ export default function EventDetailsPage({ params }: { params: { id: string } })
                       <div>
                         <div className="font-medium">Attendees</div>
                         <div className="text-sm text-muted-foreground">
-                          {mockEvent.attendees} / {mockEvent.maxAttendees} registered
+                          {event.attendees} / {event.maxAttendees} registered
                         </div>
                       </div>
                     </div>
@@ -262,14 +268,17 @@ export default function EventDetailsPage({ params }: { params: { id: string } })
 
                 <Separator />
 
-                <div>
-                  <h3 className="font-semibold mb-3">About This Event</h3>
-                  <div className="prose prose-sm max-w-none text-muted-foreground">
-                    <div className="whitespace-pre-line">{mockEvent.longDescription}</div>
-                  </div>
-                </div>
-
-                <Separator />
+                {event.longDescription && (
+                  <>
+                    <div>
+                      <h3 className="font-semibold mb-3">About This Event</h3>
+                      <div className="prose prose-sm max-w-none text-muted-foreground">
+                        <div className="whitespace-pre-line">{event.longDescription}</div>
+                      </div>
+                    </div>
+                    <Separator />
+                  </>
+                )}
 
                 <div>
                   <h3 className="font-semibold mb-3">Organized by</h3>
@@ -278,7 +287,7 @@ export default function EventDetailsPage({ params }: { params: { id: string } })
                       <User className="h-6 w-6 text-primary" />
                     </div>
                     <div>
-                      <div className="font-medium">{mockEvent.creator}</div>
+                      <div className="font-medium">{event.creator}</div>
                       <div className="text-sm text-muted-foreground">Event Organizer</div>
                     </div>
                   </div>
@@ -304,9 +313,11 @@ export default function EventDetailsPage({ params }: { params: { id: string } })
                 {!isRegistered ? (
                   <>
                     <div className="text-center space-y-2">
-                      <div className="text-2xl font-bold text-primary">{mockEvent.price}</div>
+                      <div className="text-2xl font-bold text-primary">
+                        {event.price > 0 ? `$${event.price}` : "Free"}
+                      </div>
                       <div className="text-sm text-muted-foreground">
-                        {mockEvent.maxAttendees - mockEvent.attendees} spots remaining
+                        {event.maxAttendees - event.attendees} spots remaining
                       </div>
                     </div>
 
@@ -314,16 +325,17 @@ export default function EventDetailsPage({ params }: { params: { id: string } })
                       <DialogTrigger asChild>
                         <Button
                           className="w-full h-12 text-base bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70"
-                          disabled={mockEvent.attendees >= mockEvent.maxAttendees}
+                          disabled={event.attendees >= event.maxAttendees}
                         >
-                          {mockEvent.attendees >= mockEvent.maxAttendees ? "Event Full" : "Register Now"}
+                          {event.attendees >= event.maxAttendees ? "Event Full" : "Register Now"}
                         </Button>
                       </DialogTrigger>
                       <DialogContent>
                         <DialogHeader>
                           <DialogTitle>Confirm Registration</DialogTitle>
                           <DialogDescription>
-                            You're about to register for "{mockEvent.name}". This event is free to attend.
+                            You're about to register for "{event.name}".{" "}
+                            {event.price > 0 ? `This event costs $${event.price}.` : "This event is free to attend."}
                           </DialogDescription>
                         </DialogHeader>
                         <div className="space-y-4">
@@ -359,7 +371,7 @@ export default function EventDetailsPage({ params }: { params: { id: string } })
                 ) : (
                   <div className="space-y-3">
                     <Button variant="outline" className="w-full border-2 bg-transparent" asChild>
-                      <Link href={`/tickets/${mockEvent.id}`}>View My Ticket</Link>
+                      <Link href={`/tickets/${event.id}`}>View My Ticket</Link>
                     </Button>
                     <Button variant="outline" className="w-full border-2 bg-transparent">
                       Add to Calendar
@@ -385,23 +397,21 @@ export default function EventDetailsPage({ params }: { params: { id: string } })
               <CardContent className="space-y-3">
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-muted-foreground">Registered</span>
-                  <span className="font-medium">{mockEvent.attendees}</span>
+                  <span className="font-medium">{event.attendees}</span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-muted-foreground">Capacity</span>
-                  <span className="font-medium">{mockEvent.maxAttendees}</span>
+                  <span className="font-medium">{event.maxAttendees}</span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-muted-foreground">Availability</span>
-                  <span className="font-medium text-green-600">
-                    {mockEvent.maxAttendees - mockEvent.attendees} spots
-                  </span>
+                  <span className="font-medium text-green-600">{event.maxAttendees - event.attendees} spots</span>
                 </div>
                 <div className="w-full bg-muted rounded-full h-2">
                   <div
                     className="bg-gradient-to-r from-primary to-primary/80 h-2 rounded-full"
                     style={{
-                      width: `${(mockEvent.attendees / mockEvent.maxAttendees) * 100}%`,
+                      width: `${(event.attendees / event.maxAttendees) * 100}%`,
                     }}
                   />
                 </div>

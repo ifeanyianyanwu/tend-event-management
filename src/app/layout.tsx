@@ -3,13 +3,13 @@ import type { Metadata } from "next"
 import { Inter } from "next/font/google"
 import "./globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
+import { Toaster } from "@/components/ui/toaster"
 
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "EventHub - Event Management Platform",
-  description: "Create, manage, and attend events with ease",
-    generator: 'v0.dev'
+  title: "Tend - Event Management Platform",
+  description: "Create, manage, and discover amazing events with Tend",
 }
 
 export default function RootLayout({
@@ -22,6 +22,7 @@ export default function RootLayout({
       <body className={inter.className}>
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem disableTransitionOnChange>
           {children}
+          <Toaster />
         </ThemeProvider>
       </body>
     </html>

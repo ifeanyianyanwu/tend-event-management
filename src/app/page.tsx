@@ -40,13 +40,13 @@ const testimonials = [
   {
     name: "Sarah Johnson",
     role: "Event Organizer",
-    content: "EventHub made organizing our tech conference incredibly easy. The QR code system was flawless!",
+    content: "Tend made organizing our tech conference incredibly easy. The QR code system was flawless!",
     rating: 5,
   },
   {
     name: "Mike Chen",
     role: "Startup Founder",
-    content: "Found amazing networking events through EventHub. The platform is intuitive and well-designed.",
+    content: "Found amazing networking events through Tend. The platform is intuitive and well-designed.",
     rating: 5,
   },
   {
@@ -70,7 +70,7 @@ export default function HomePage() {
                 <Sparkles className="h-3 w-3 text-primary absolute -top-1 -right-1" />
               </div>
               <h1 className="text-2xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
-                EventHub
+                Tend
               </h1>
             </div>
             <div className="flex items-center space-x-4">
@@ -138,7 +138,7 @@ export default function HomePage() {
       <section className="py-20 px-4">
         <div className="container mx-auto">
           <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">Why Choose EventHub?</h2>
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">Why Choose Tend?</h2>
             <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
               Everything you need to create successful events and build lasting connections
             </p>
@@ -284,7 +284,7 @@ export default function HomePage() {
           <div className="max-w-3xl mx-auto">
             <h2 className="text-3xl md:text-4xl font-bold mb-6">Ready to Create Your Next Event?</h2>
             <p className="text-xl text-muted-foreground mb-8">
-              Join EventHub today and start building memorable experiences for your community
+              Join Tend today and start building memorable experiences for your community
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button
@@ -317,7 +317,7 @@ export default function HomePage() {
                 <Calendar className="h-6 w-6 text-primary" />
                 <Sparkles className="h-2 w-2 text-primary absolute -top-0.5 -right-0.5" />
               </div>
-              <span className="text-lg font-bold">EventHub</span>
+              <span className="text-lg font-bold">Tend</span>
             </div>
             <div className="flex items-center space-x-6 text-sm text-muted-foreground">
               <Link href="/about" className="hover:text-primary transition-colors">
@@ -335,7 +335,7 @@ export default function HomePage() {
             </div>
           </div>
           <div className="mt-8 pt-8 border-t text-center text-sm text-muted-foreground">
-            <p>&copy; 2024 EventHub. All rights reserved.</p>
+            <p>&copy; 2024 Tend. All rights reserved.</p>
           </div>
         </div>
       </footer>
