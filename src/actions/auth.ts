@@ -83,28 +83,10 @@ export async function signup(_state: SignupFormState, formData: FormData): Promi
   }
 
   try {
-    const res = await authApiService.signup(validatedFields.data)
-    const cookieStore = await cookies()
+    // Signup now only triggers email verification, no tokens returned
+    await authApiService.signup(validatedFields.data)
 
-    // Set secure HTTP-only cookies
-    cookieStore.set("access_token", res.access_token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      maxAge: 60 * 60 * 24 * 7, // 7 days
-    })
-
-    cookieStore.set("refresh_token", res.refresh_token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      maxAge: 60 * 60 * 24 * 30, // 30 days
-    })
-
-    // Create session
-    await createSession(res.user.id)
-
-    redirect("/dashboard")
+    return { success: true }
   } catch (error) {
     return handleError(error) as SignupReturnState
   }
