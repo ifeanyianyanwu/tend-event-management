@@ -162,3 +162,5 @@ class AuthApiService extends BaseApiService {
 }
 
 const authApiService = new AuthApiService()
+
+export { authApiService }
