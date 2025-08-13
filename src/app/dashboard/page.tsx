@@ -21,9 +21,9 @@ import {
   Sparkles,
 } from "lucide-react"
 import { ThemeToggle } from "@/components/theme-toggle"
-import { EventService } from "@/services/event.service"
-import { RegistrationService } from "@/services/registration.service"
-import { DashboardService } from "@/services/dashboard.service"
+import { eventService } from "@/services/event.service"
+import { registrationService } from "@/services/registration.service"
+import { dashboardService } from "@/services/dashboard.service"
 
 export default function DashboardPage() {
   const [stats, setStats] = useState({
@@ -40,9 +40,9 @@ export default function DashboardPage() {
     const loadDashboardData = async () => {
       try {
         const [statsData, eventsData, registrationsData] = await Promise.all([
-          DashboardService.getStats(),
-          EventService.getMyEvents(),
-          RegistrationService.getMyRegistrations(),
+          dashboardService.getStats(),
+          eventService.getMyEvents(),
+          registrationService.getMyRegistrations(),
         ])
 
         setStats(statsData)
@@ -84,7 +84,7 @@ export default function DashboardPage() {
   const handleDeleteEvent = async (eventId: string) => {
     if (confirm("Are you sure you want to delete this event?")) {
       try {
-        await EventService.deleteEvent(eventId)
+        await eventService.deleteEvent(eventId)
         setMyEvents(myEvents.filter((event) => event.id !== eventId))
       } catch (error) {
         console.error("Failed to delete event:", error)
@@ -95,7 +95,7 @@ export default function DashboardPage() {
   const handleCancelRegistration = async (eventId: string) => {
     if (confirm("Are you sure you want to cancel your registration?")) {
       try {
-        await RegistrationService.cancelRegistration(eventId)
+        await registrationService.cancelRegistration(eventId)
         setRegisteredEvents(registeredEvents.filter((event) => event.id !== eventId))
       } catch (error) {
         console.error("Failed to cancel registration:", error)
