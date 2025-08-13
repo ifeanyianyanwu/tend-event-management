@@ -59,3 +59,5 @@ export class BaseApiService {
     return response.data
   }
 }
+
+export const baseApiService = new BaseApiService()

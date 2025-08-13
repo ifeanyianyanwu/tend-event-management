@@ -1,4 +1,4 @@
-import { EventService } from "./event.service"
+import { eventService } from "./event.service"
 
 export interface Ticket {
   id: string
@@ -17,8 +17,8 @@ export interface Ticket {
   }
 }
 
-export class TicketService {
-  private static tickets: Ticket[] = [
+class TicketService {
+  private tickets: Ticket[] = [
     {
       id: "ticket-1",
       eventId: "1",
@@ -53,7 +53,7 @@ export class TicketService {
     },
   ]
 
-  static async getTicket(eventId: string): Promise<Ticket | null> {
+  async getTicket(eventId: string): Promise<Ticket | null> {
     await new Promise((resolve) => setTimeout(resolve, 500))
 
     const ticket = this.tickets.find((t) => t.eventId === eventId)
@@ -61,8 +61,7 @@ export class TicketService {
       return null
     }
 
-    // Get complete event data from EventService
-    const event = await EventService.getEvent(eventId)
+    const event = await eventService.getEvent(eventId)
     if (!event) {
       return null
     }
@@ -80,7 +79,7 @@ export class TicketService {
     }
   }
 
-  static async getUserTickets(userId: string): Promise<Ticket[]> {
+  async getUserTickets(userId: string): Promise<Ticket[]> {
     await new Promise((resolve) => setTimeout(resolve, 500))
 
     const userTickets = this.tickets.filter((t) => t.userId === userId)
@@ -88,7 +87,7 @@ export class TicketService {
     // Populate event data for each ticket
     const ticketsWithEvents = await Promise.all(
       userTickets.map(async (ticket) => {
-        const event = await EventService.getEvent(ticket.eventId)
+        const event = await eventService.getEvent(ticket.eventId)
         return {
           ...ticket,
           event: event
@@ -108,7 +107,7 @@ export class TicketService {
     return ticketsWithEvents
   }
 
-  static async validateTicket(qrCode: string): Promise<{ valid: boolean; ticket?: Ticket; message: string }> {
+  async validateTicket(qrCode: string): Promise<{ valid: boolean; ticket?: Ticket; message: string }> {
     await new Promise((resolve) => setTimeout(resolve, 1000))
 
     const ticket = this.tickets.find((t) => t.qrCode === qrCode)
@@ -131,17 +130,19 @@ export class TicketService {
     return { valid: true, ticket, message: "Ticket validated successfully" }
   }
 
-  static async downloadTicket(ticketId: string): Promise<string> {
+  async downloadTicket(ticketId: string): Promise<string> {
     await new Promise((resolve) => setTimeout(resolve, 1000))
 
     // Mock PDF generation - in real app, this would generate actual PDF
     return `data:application/pdf;base64,JVBERi0xLjQKJdPr6eEKMSAwIG9iago8PAovVGl0bGUgKFRpY2tldCAtICR7dGlja2V0SWR9KQovQ3JlYXRvciAoVGVuZCBFdmVudCBNYW5hZ2VtZW50KQovUHJvZHVjZXIgKFRlbmQpCi9DcmVhdGlvbkRhdGUgKEQ6MjAyNDAzMTUxMjAwMDBaKQo+PgplbmRvYmoKMiAwIG9iago8PAovVHlwZSAvQ2F0YWxvZwovUGFnZXMgMyAwIFIKPj4KZW5kb2JqCjMgMCBvYmoKPDwKL1R5cGUgL1BhZ2VzCi9LaWRzIFs0IDAgUl0KL0NvdW50IDEKL01lZGlhQm94IFswIDAgNjEyIDc5Ml0KPj4KZW5kb2JqCjQgMCBvYmoKPDwKL1R5cGUgL1BhZ2UKL1BhcmVudCAzIDAgUgovUmVzb3VyY2VzIDw8Ci9Gb250IDw8Ci9GMSA5IDAgUgo+Pgo+PgovTWVkaWFCb3ggWzAgMCA2MTIgNzkyXQovQ29udGVudHMgNSAwIFIKPj4KZW5kb2JqCjUgMCBvYmoKPDwKL0xlbmd0aCA0NAo+PgpzdHJlYW0KQlQKL0YxIDEyIFRmCjcyIDcyMCBUZAooVGlja2V0IElEOiAke3RpY2tldElkfSkgVGoKRVQKZW5kc3RyZWFtCmVuZG9iago2IDAgb2JqCjw8Ci9UeXBlIC9Gb250Ci9TdWJ0eXBlIC9UeXBlMQovTmFtZSAvRjEKL0Jhc2VGb250IC9IZWx2ZXRpY2EKL0VuY29kaW5nIC9XaW5BbnNpRW5jb2RpbmcKPj4KZW5kb2JqCnhyZWYKMCA3CjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwOSAwMDAwMCBuIAowMDAwMDAwMTc0IDAwMDAwIG4gCjAwMDAwMDAyMDEgMDAwMDAgbiAKMDAwMDAwMDI2OSAwMDAwMCBuIAowMDAwMDAwNDI4IDAwMDAwIG4gCjAwMDAwMDA1MjMgMDAwMDAgbiAKdHJhaWxlcgo8PAovU2l6ZSA3Ci9Sb290IDIgMCBSCi9JbmZvIDEgMCBSCj4+CnN0YXJ0eHJlZgo2MjUKJSVFT0Y=`
   }
 
-  static async shareTicket(ticketId: string, email: string): Promise<boolean> {
+  async shareTicket(ticketId: string, email: string): Promise<boolean> {
     await new Promise((resolve) => setTimeout(resolve, 1000))
 
     console.log(`Sharing ticket ${ticketId} to ${email}`)
     return true
   }
 }
+
+export const ticketService = new TicketService()

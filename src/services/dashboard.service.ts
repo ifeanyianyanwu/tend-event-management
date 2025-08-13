@@ -1,8 +1,8 @@
 // Dashboard service with dummy endpoints
-export class DashboardService {
-  private static baseUrl = "/api/dashboard"
+class DashboardService {
+  private baseUrl = "/api/dashboard"
 
-  static async getStats() {
+  async getStats() {
     // Simulate API call
     await new Promise((resolve) => setTimeout(resolve, 800))
 
@@ -22,7 +22,7 @@ export class DashboardService {
     }
   }
 
-  static async getAnalytics(timeRange: "7d" | "30d" | "90d" | "1y" = "30d") {
+  async getAnalytics(timeRange: "7d" | "30d" | "90d" | "1y" = "30d") {
     // Simulate API call
     await new Promise((resolve) => setTimeout(resolve, 1000))
 
@@ -68,7 +68,7 @@ export class DashboardService {
     }
   }
 
-  static async getRecentActivity() {
+  async getRecentActivity() {
     // Simulate API call
     await new Promise((resolve) => setTimeout(resolve, 600))
 
@@ -123,7 +123,7 @@ export class DashboardService {
     return { activities }
   }
 
-  static async getUpcomingEvents() {
+  async getUpcomingEvents() {
     // Simulate API call
     await new Promise((resolve) => setTimeout(resolve, 500))
 
@@ -160,7 +160,7 @@ export class DashboardService {
     return { events: upcomingEvents }
   }
 
-  static async exportData(
+  async exportData(
     type: "events" | "registrations" | "analytics",
     format: "csv" | "excel" | "pdf" = "csv",
     dateRange?: { start: string; end: string },
@@ -199,7 +199,7 @@ export class DashboardService {
     }
   }
 
-  static async getEventPerformance(eventId: string) {
+  async getEventPerformance(eventId: string) {
     // Simulate API call
     await new Promise((resolve) => setTimeout(resolve, 700))
 
@@ -238,7 +238,7 @@ export class DashboardService {
     }
   }
 
-  static async getNotifications() {
+  async getNotifications() {
     // Simulate API call
     await new Promise((resolve) => setTimeout(resolve, 400))
 
@@ -275,14 +275,14 @@ export class DashboardService {
     return { notifications }
   }
 
-  static async markNotificationRead(notificationId: string) {
+  async markNotificationRead(notificationId: string) {
     // Simulate API call
     await new Promise((resolve) => setTimeout(resolve, 300))
 
     return { success: true, message: "Notification marked as read" }
   }
 
-  static async getQuickStats() {
+  async getQuickStats() {
     // Simulate API call
     await new Promise((resolve) => setTimeout(resolve, 400))
 
@@ -295,3 +295,5 @@ export class DashboardService {
     }
   }
 }
+
+export const dashboardService = new DashboardService()

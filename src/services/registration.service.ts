@@ -1,9 +1,9 @@
 // Registration service with dummy endpoints
-export class RegistrationService {
-  private static baseUrl = "/api/registrations"
+class RegistrationService {
+  private baseUrl = "/api/registrations"
 
   // Mock registrations data
-  private static mockRegistrations = [
+  private mockRegistrations = [
     {
       id: "reg-1",
       eventId: "2",
@@ -28,7 +28,7 @@ export class RegistrationService {
     },
   ]
 
-  static async registerForEvent(eventId: string, userData?: any) {
+  async registerForEvent(eventId: string, userData?: any) {
     // Simulate API call
     await new Promise((resolve) => setTimeout(resolve, 1500))
 
@@ -63,7 +63,7 @@ export class RegistrationService {
     }
   }
 
-  static async cancelRegistration(eventId: string) {
+  async cancelRegistration(eventId: string) {
     // Simulate API call
     await new Promise((resolve) => setTimeout(resolve, 1000))
 
@@ -81,7 +81,7 @@ export class RegistrationService {
     return { success: true, message: "Registration cancelled successfully" }
   }
 
-  static async getMyRegistrations() {
+  async getMyRegistrations() {
     // Simulate API call
     await new Promise((resolve) => setTimeout(resolve, 600))
 
@@ -89,7 +89,7 @@ export class RegistrationService {
     return this.mockRegistrations.filter((reg) => reg.userId === "user-1" && reg.status === "CONFIRMED")
   }
 
-  static async getRegistrationDetails(eventId: string) {
+  async getRegistrationDetails(eventId: string) {
     // Simulate API call
     await new Promise((resolve) => setTimeout(resolve, 400))
 
@@ -102,7 +102,7 @@ export class RegistrationService {
     return { success: true, registration }
   }
 
-  static async updateRegistration(eventId: string, updateData: any) {
+  async updateRegistration(eventId: string, updateData: any) {
     // Simulate API call
     await new Promise((resolve) => setTimeout(resolve, 800))
 
@@ -126,7 +126,7 @@ export class RegistrationService {
     }
   }
 
-  static async getEventRegistrations(eventId: string) {
+  async getEventRegistrations(eventId: string) {
     // Simulate API call
     await new Promise((resolve) => setTimeout(resolve, 700))
 
@@ -141,7 +141,7 @@ export class RegistrationService {
     }
   }
 
-  static async checkRegistrationStatus(eventId: string) {
+  async checkRegistrationStatus(eventId: string) {
     // Simulate API call
     await new Promise((resolve) => setTimeout(resolve, 300))
 
@@ -153,7 +153,7 @@ export class RegistrationService {
     }
   }
 
-  static async bulkRegister(eventId: string, attendees: any[]) {
+  async bulkRegister(eventId: string, attendees: any[]) {
     // Simulate API call
     await new Promise((resolve) => setTimeout(resolve, 2000))
 
@@ -178,7 +178,7 @@ export class RegistrationService {
     }
   }
 
-  static async exportRegistrations(eventId: string) {
+  async exportRegistrations(eventId: string) {
     // Simulate API call
     await new Promise((resolve) => setTimeout(resolve, 1500))
 
@@ -201,3 +201,5 @@ export class RegistrationService {
     }
   }
 }
+
+export const registrationService = new RegistrationService()

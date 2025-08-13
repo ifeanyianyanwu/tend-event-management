@@ -1,5 +1,5 @@
 export class EventService {
-  private static mockEvents = [
+  private mockEvents = [
     {
       id: "1",
       name: "Tech Conference 2024",
@@ -95,10 +95,18 @@ export class EventService {
   constructor() {}
 
   getEvents(): any[] {
-    return EventService.mockEvents
+    return this.mockEvents
   }
 
   getEventById(id: string): any {
-    return EventService.mockEvents.find((event) => event.id === id)
+    return this.mockEvents.find((event) => event.id === id)
+  }
+
+  // Added missing getEvent method that TicketService expects
+  async getEvent(id: string): Promise<any> {
+    await new Promise((resolve) => setTimeout(resolve, 300))
+    return this.getEventById(id)
   }
 }
+
+export const eventService = new EventService()
